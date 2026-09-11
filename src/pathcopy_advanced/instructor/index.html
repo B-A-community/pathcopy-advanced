@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PathCopy Advanced</title>
+<style>
+  body { font: 12px/1.5 "Segoe UI", system-ui, sans-serif; color: #222; margin: 10px; }
+  h1 { font-size: 15px; margin: 0 0 8px; }
+  h2 { font-size: 12px; margin: 14px 0 4px; text-transform: uppercase;
+       letter-spacing: .04em; color: #666; }
+  ol, ul { margin: 0; padding-left: 18px; }
+  li { margin-bottom: 4px; }
+  kbd { background: #eee; border: 1px solid #ccc; border-radius: 3px;
+        padding: 0 4px; font-family: inherit; font-size: 11px; }
+  dl { margin: 0; }
+  dt { font-weight: 600; margin-top: 6px; }
+  dd { margin: 0 0 0 10px; color: #444; }
+</style>
+</head>
+<body>
+
+<h1>PathCopy Advanced</h1>
+
+<h2>Steps</h2>
+<ol>
+  <li>Click an edge to use as the path. Connected edges are followed
+      automatically &mdash; no welding required. Click a face to use its outer
+      loop, or pre-select edges before starting the tool.</li>
+  <li>Click the group or component to copy. <kbd>Ctrl</kbd>+click adds more
+      objects, and copies then alternate between them.</li>
+  <li>Keep typing values or changing options. The copies rebuild in place, and
+      the whole session is a single undo step.</li>
+</ol>
+
+<h2>Measurement box</h2>
+<dl>
+  <dt>48</dt><dd>Spacing between copies.</dd>
+  <dt>20x</dt><dd>Place exactly 20 copies, evenly spread.</dd>
+  <dt>0</dt><dd>Switch to one copy per path vertex.</dd>
+</dl>
+
+<h2>Keys</h2>
+<dl>
+  <dt><kbd>Tab</kbd></dt><dd>Cycle distribution: spacing, count, fit, vertices.</dd>
+  <dt><kbd>&uarr;</kbd> <kbd>&darr;</kbd></dt><dd>Cycle orientation: flat, 3D, keep.</dd>
+  <dt><kbd>&larr;</kbd> <kbd>&rarr;</kbd></dt><dd>Cycle alignment: start, centered, end.</dd>
+  <dt><kbd>Esc</kbd></dt><dd>Step back one stage; removes the copies first.</dd>
+  <dt>Right-click</dt><dd>Every option, including offsets and randomisation.</dd>
+</dl>
+
+<h2>Modes</h2>
+<ul>
+  <li><b>Spacing</b> &mdash; fixed distance, leftover length handled by the
+      alignment setting.</li>
+  <li><b>Count</b> &mdash; a fixed number of copies, evenly spread.</li>
+  <li><b>Fit spacing</b> &mdash; nearest spacing to the one you typed that
+      divides the path evenly.</li>
+  <li><b>Vertices</b> &mdash; one copy per corner of the path.</li>
+</ul>
+
+</body>
+</html>
