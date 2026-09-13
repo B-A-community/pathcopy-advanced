@@ -1,4 +1,4 @@
-﻿module PCAInteract
+module PCAInteract
   REPORT = []
   BASE = Geom::Point3d.new(6000, 0, 0)
   module_function
@@ -6,6 +6,25 @@
   def ents = model.active_entities
   def at(dx, dy, dz = 0) = Geom::Point3d.new(BASE.x + dx, BASE.y + dy, BASE.z + dz)
   def check(n, c, d = '') = REPORT << [(c ? 'PASS' : 'FAIL'), n, d.to_s]
+
+  # Self-contained: earlier this leaned on live_scene having built the bench.
+  def bench
+    existing = model.definitions['PCA_Bench']
+    return existing if existing
+
+    definition = model.definitions.add('PCA_Bench')
+    seat = definition.entities.add_face(
+      Geom::Point3d.new(-30, -10, 0), Geom::Point3d.new(30, -10, 0),
+      Geom::Point3d.new(30, 10, 0), Geom::Point3d.new(-30, 10, 0)
+    )
+    seat.pushpull(-4)
+    back = definition.entities.add_face(
+      Geom::Point3d.new(-30, 7, 4), Geom::Point3d.new(30, 7, 4),
+      Geom::Point3d.new(30, 10, 4), Geom::Point3d.new(-30, 10, 4)
+    )
+    back.pushpull(-18)
+    definition
+  end
 
   def run
     REPORT.clear
@@ -15,7 +34,7 @@
     edges = []
     edges << ents.add_line(at(0, 0), at(400, 0))
     edges << ents.add_line(at(400, 0), at(400, 300))
-    source = ents.add_instance(model.definitions['PCA_Bench'], Geom::Transformation.new(at(-200, 0)))
+    source = ents.add_instance(bench, Geom::Transformation.new(at(-200, 0)))
 
     settings = BACommunity::PathCopyAdvanced::Settings.new
     settings.distribution = :spacing

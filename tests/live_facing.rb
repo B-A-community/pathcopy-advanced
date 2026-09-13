@@ -77,7 +77,7 @@ module PCAFacing
           inward.map { |e| inward?(e, right_centre) }.inspect)
     check('both rings have the same ten positions relative to their centre',
           outward.zip(inward).all? do |a, b|
-            (a.transformation.origin - left_centre).distance(b.transformation.origin - right_centre) < 1.0e-3
+            ((a.transformation.origin - left_centre) - (b.transformation.origin - right_centre)).length < 1.0e-3
           end)
 
     # 2. A clockwise loop drawn by hand: auto now faces outward, inward flips it.
