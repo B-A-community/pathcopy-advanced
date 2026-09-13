@@ -19,9 +19,12 @@ module BACommunity
                     ALIGN_LABELS, settings, :align, &on_change)
         radio_group(menu.add_submenu('Anchor'), ANCHOR_MODES,
                     ANCHOR_LABELS, settings, :anchor, &on_change)
+        radio_group(menu.add_submenu('Facing on closed paths'), FACING_MODES,
+                    FACING_LABELS, settings, :facing, &on_change)
 
         menu.add_separator
         toggle(menu, 'Skip closing copy on loops', settings, :skip_seam, &on_change)
+        toggle(menu, 'Reverse path direction', settings, :reverse_path, &on_change)
         toggle(menu, 'Flip every second copy', settings, :alternate_flip, &on_change)
         toggle(menu, 'Randomise placement', settings, :jitter, &on_change)
         toggle(menu, 'Group the copies', settings, :group_result, &on_change)

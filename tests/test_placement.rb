@@ -184,3 +184,106 @@ test 'an empty source list yields nothing rather than raising' do
   settings = settings_with(distribution: :count, count: 3)
   assert_equal [], Placement.transformations(path, Distribution.distances(path, settings), settings, [])
 end
+
+# --- facing on closed loops ----------------------------------------------------
+
+CCW_SQUARE = [[0, 0, 0], [100, 0, 0], [100, 100, 0], [0, 100, 0], [0, 0, 0]].freeze
+CW_SQUARE  = CCW_SQUARE.reverse.freeze
+
+def lateral_towards_centre?(transformation, centre)
+  to_centre = centre - transformation.origin
+  transformation.yaxis.dot(to_centre) > 0
+end
+
+test 'on a counter-clockwise loop the left-hand side already faces inward' do
+  path = build_path(CCW_SQUARE, closed: true)
+  settings = settings_with(distribution: :count, count: 4, orientation: :flat, facing: :auto)
+  centre = Geom::Point3d.new(50, 50, 0)
+  place(path, settings, instance_with).each do |t|
+    assert lateral_towards_centre?(t, centre), "expected +Y towards centre at #{t.origin}"
+  end
+end
+
+test 'on a clockwise loop the left-hand side faces outward by default' do
+  path = build_path(CW_SQUARE, closed: true)
+  settings = settings_with(distribution: :count, count: 4, orientation: :flat, facing: :auto)
+  centre = Geom::Point3d.new(50, 50, 0)
+  place(path, settings, instance_with).each do |t|
+    assert !lateral_towards_centre?(t, centre), "expected +Y away from centre at #{t.origin}"
+  end
+end
+
+test 'requesting inward on a clockwise loop turns every copy around' do
+  path = build_path(CW_SQUARE, closed: true)
+  centre = Geom::Point3d.new(50, 50, 0)
+  settings = settings_with(distribution: :count, count: 4, orientation: :flat, facing: :inward)
+  place(path, settings, instance_with).each do |t|
+    assert lateral_towards_centre?(t, centre), "expected +Y towards centre at #{t.origin}"
+  end
+end
+
+test 'requesting outward on a counter-clockwise loop turns every copy around' do
+  path = build_path(CCW_SQUARE, closed: true)
+  centre = Geom::Point3d.new(50, 50, 0)
+  settings = settings_with(distribution: :count, count: 4, orientation: :flat, facing: :outward)
+  place(path, settings, instance_with).each do |t|
+    assert !lateral_towards_centre?(t, centre), "expected +Y away from centre at #{t.origin}"
+  end
+end
+
+test 'facing is honoured with 3D orientation too' do
+  path = build_path(CCW_SQUARE, closed: true)
+  centre = Geom::Point3d.new(50, 50, 0)
+  settings = settings_with(distribution: :count, count: 4, orientation: :tangent3d, facing: :outward)
+  place(path, settings, instance_with).each do |t|
+    assert !lateral_towards_centre?(t, centre)
+  end
+end
+
+test 'the turn-around does not touch the copy positions' do
+  path = build_path(CCW_SQUARE, closed: true)
+  a = place(path, settings_with(distribution: :count, count: 4, orientation: :flat, facing: :auto), instance_with)
+  b = place(path, settings_with(distribution: :count, count: 4, orientation: :flat, facing: :outward), instance_with)
+  a.zip(b).each { |x, y| assert_point x.origin.to_a, y.origin }
+  assert_vector (a.first.xaxis.to_a.map { |v| -v }), b.first.xaxis
+end
+
+test 'facing has no effect on an open path' do
+  path = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0]])
+  a = place(path, settings_with(distribution: :count, count: 3, orientation: :flat, facing: :auto), instance_with)
+  b = place(path, settings_with(distribution: :count, count: 3, orientation: :flat, facing: :inward), instance_with)
+  a.zip(b).each { |x, y| assert_vector x.xaxis.to_a, y.xaxis }
+end
+
+test 'facing has no effect when orientation is kept' do
+  path = build_path(CW_SQUARE, closed: true)
+  a = place(path, settings_with(distribution: :count, count: 4, orientation: :none, facing: :auto), instance_with)
+  b = place(path, settings_with(distribution: :count, count: 4, orientation: :none, facing: :inward), instance_with)
+  a.zip(b).each { |x, y| assert_vector x.xaxis.to_a, y.xaxis }
+end
+
+test 'a vertical loop has no inside in plan and is left alone' do
+  wall = [[0, 0, 0], [100, 0, 0], [100, 0, 100], [0, 0, 100], [0, 0, 0]]
+  path = build_path(wall, closed: true)
+  a = place(path, settings_with(distribution: :count, count: 4, orientation: :flat, facing: :auto), instance_with)
+  b = place(path, settings_with(distribution: :count, count: 4, orientation: :flat, facing: :inward), instance_with)
+  a.zip(b).each { |x, y| assert_vector x.xaxis.to_a, y.xaxis }
+end
+
+test 'a concave loop still gets a consistent winding' do
+  # An L-shaped outline drawn counter-clockwise.
+  outline = [[0, 0, 0], [100, 0, 0], [100, 40, 0], [40, 40, 0], [40, 100, 0], [0, 100, 0], [0, 0, 0]]
+  path = build_path(outline, closed: true)
+  assert Placement.lateral_points_inward?(path) == true
+  assert Placement.lateral_points_inward?(build_path(outline.reverse, closed: true)) == false
+end
+
+test 'alternate flip is applied on top of facing' do
+  path = build_path(CCW_SQUARE, closed: true)
+  settings = settings_with(distribution: :count, count: 4, orientation: :flat,
+                           facing: :outward, alternate_flip: true)
+  centre = Geom::Point3d.new(50, 50, 0)
+  placed = place(path, settings, instance_with)
+  assert !lateral_towards_centre?(placed[0], centre)
+  assert lateral_towards_centre?(placed[1], centre)
+end

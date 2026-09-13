@@ -3,7 +3,7 @@
 module BACommunity
   module PathCopyAdvanced
     PLUGIN_NAME = 'PathCopy Advanced'
-    VERSION     = '0.1.0'
+    VERSION     = '0.2.0'
 
     # Geometric tolerance, in inches (SketchUp's internal unit).
     # SketchUp itself collapses geometry below 0.001", so we stay an order below.
@@ -20,6 +20,7 @@ module BACommunity
     DISTRIBUTION_MODES = %i[spacing count fit vertices].freeze
     ORIENTATION_MODES  = %i[flat tangent3d none].freeze
     ALIGN_MODES        = %i[start center end].freeze
+    FACING_MODES       = %i[auto outward inward].freeze
     ANCHOR_MODES       = %i[origin center bottom].freeze
 
     DISTRIBUTION_LABELS = {
@@ -39,6 +40,12 @@ module BACommunity
       origin: 'Object origin',
       center: 'Bounds center',
       bottom: 'Bounds bottom center'
+    }.freeze
+
+    FACING_LABELS = {
+      auto:    'As drawn',
+      outward: 'Face outward',
+      inward:  'Face inward'
     }.freeze
 
     ALIGN_LABELS = {

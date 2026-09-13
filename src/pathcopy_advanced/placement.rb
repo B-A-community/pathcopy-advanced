@@ -31,6 +31,7 @@ module BACommunity
         locals = sources.map { |item| local_transformation(item, settings.anchor) }
         random = settings.jitter ? Random.new(settings.seed + index_offset) : nil
         previous_basis = nil
+        turn_around = loop_flip?(path, settings)
 
         distances.each_with_index.map do |distance, position|
           index = index_offset + position
@@ -54,6 +55,7 @@ module BACommunity
             factor   += symmetric(random, settings.jitter_scale)
           end
 
+          spin += 180.0 if turn_around
           spin += 180.0 if settings.alternate_flip && index.odd?
           factor = TOLERANCE if factor < TOLERANCE
 
@@ -95,6 +97,49 @@ module BACommunity
         when :bottom then Geom::Point3d.new(center.x, center.y, bounds.min.z)
         else              center
         end
+      end
+
+      # On a closed loop the side an object faces depends on nothing but the
+      # direction the loop happened to be drawn in. A requested facing is
+      # honoured by turning every copy 180 degrees when the winding disagrees.
+      def loop_flip?(path, settings)
+        return false unless path.closed? && settings.facing != :auto
+        return false if settings.orientation == :none
+
+        inward = lateral_points_inward?(path)
+        return false if inward.nil?
+
+        (settings.facing == :inward) != inward
+      end
+
+      # In both path-following modes local +Y is Z x tangent, the left-hand
+      # side of travel. Seen from above, a counter-clockwise loop has its
+      # inside on the left; a clockwise one has it on the right.
+      #
+      # Returns nil for a loop with no usable footprint in plan (vertical),
+      # where "inward" has no meaning relative to a Z-up frame.
+      def lateral_points_inward?(path)
+        normal = newell_normal(path.points)
+        return nil if normal.nil? || normal.z.abs < 1.0e-6
+
+        normal.z.positive?
+      end
+
+      # Newell's method: a plane normal for a polygon that need not be convex,
+      # signed by the winding order.
+      def newell_normal(points)
+        nx = ny = nz = 0.0
+        count = points.size
+        points.each_with_index do |p, i|
+          q = points[(i + 1) % count]
+          nx += (p.y - q.y) * (p.z + q.z)
+          ny += (p.z - q.z) * (p.x + q.x)
+          nz += (p.x - q.x) * (p.y + q.y)
+        end
+        length = Math.sqrt(nx * nx + ny * ny + nz * nz)
+        return nil if length < TOLERANCE
+
+        Geom::Vector3d.new(nx / length, ny / length, nz / length)
       end
 
       # A right-handed frame whose local X follows the path.

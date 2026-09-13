@@ -24,6 +24,8 @@ module BACommunity
         offset_lateral:  0.0,
         offset_vertical: 0.0,
         alternate_flip:  false,
+        facing:          :auto,
+        reverse_path:    false,
 
         jitter:          false,
         jitter_angle:    0.0,
@@ -37,7 +39,7 @@ module BACommunity
         tag_name:        ''
       }.freeze
 
-      SYMBOL_KEYS = %i[distribution align orientation anchor].freeze
+      SYMBOL_KEYS = %i[distribution align orientation anchor facing].freeze
 
       DEFAULTS.each_key { |key| attr_accessor key }
 
@@ -74,6 +76,7 @@ module BACommunity
         @orientation  = :flat    unless ORIENTATION_MODES.include?(@orientation)
         @align        = :start   unless ALIGN_MODES.include?(@align)
         @anchor       = :origin  unless ANCHOR_MODES.include?(@anchor)
+        @facing       = :auto    unless FACING_MODES.include?(@facing)
 
         @spacing = DEFAULTS[:spacing] unless @spacing.to_f > TOLERANCE
         @count   = @count.to_i.clamp(1, MAX_COPIES)
@@ -112,6 +115,10 @@ module BACommunity
         @anchor = cycle(ANCHOR_MODES, @anchor, step)
       end
 
+      def cycle_facing!(step = 1)
+        @facing = cycle(FACING_MODES, @facing, step)
+      end
+
       # One-line summary for the status bar.
       def summary
         parts = [DISTRIBUTION_LABELS[@distribution]]
@@ -122,6 +129,8 @@ module BACommunity
                  end
         parts << ORIENTATION_LABELS[@orientation]
         parts << ALIGN_LABELS[@align] if @distribution == :spacing
+        parts << FACING_LABELS[@facing] unless @facing == :auto
+        parts << 'reversed' if @reverse_path
         parts << 'jitter' if @jitter
         parts.join(' | ')
       end

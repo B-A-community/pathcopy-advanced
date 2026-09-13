@@ -116,6 +116,10 @@ module BACommunity
           @settings.cycle_align!
         when VK_LEFT
           @settings.cycle_align!(-1)
+        when 70 # F
+          @settings.cycle_facing!
+        when 82 # R
+          @settings.reverse_path = !@settings.reverse_path
         else
           handled = false
         end
@@ -239,7 +243,8 @@ module BACommunity
       end
 
       def active_paths
-        @paths.any? ? @paths : Array(@hover_path)
+        paths = @paths.any? ? @paths : Array(@hover_path)
+        @settings.reverse_path ? paths.map(&:reverse) : paths
       end
 
       def active_sources
@@ -354,7 +359,7 @@ module BACommunity
         return [] if sources.empty?
 
         offset = 0
-        @paths.flat_map do |path|
+        active_paths.flat_map do |path|
           distances = Distribution.distances(path, @settings)
           placed = Placement.transformations(path, distances, @settings, sources, index_offset: offset)
           offset += placed.size
@@ -412,7 +417,7 @@ module BACommunity
         Sketchup.set_status_text(vcb_value, SB_VCB_VALUE)
       end
 
-      HINTS = 'Tab: mode | Up/Down: orientation | Left/Right: align | right-click: all options'
+      HINTS = 'Tab: mode | Up/Down: orientation | Left/Right: align | F: facing | R: reverse | right-click: all'
 
       def prompt
         case @state

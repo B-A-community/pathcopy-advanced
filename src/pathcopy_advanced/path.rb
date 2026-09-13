@@ -30,6 +30,12 @@ module BACommunity
         @closed
       end
 
+      # Same polyline walked the other way: start and end swap, and every
+      # tangent flips, which turns the copies around with it.
+      def reverse
+        Path.new(@points.reverse, closed: @closed)
+      end
+
       def valid?
         @points.size >= 2 && @length > TOLERANCE
       end
