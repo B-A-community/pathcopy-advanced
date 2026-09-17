@@ -115,3 +115,42 @@ end
 test 'an invalid path yields nothing' do
   assert_equal [], Distribution.distances(build_path([[1, 1, 1], [1, 1, 1]]), settings_with)
 end
+
+
+# --- fit per segment (fence mode) ----------------------------------------
+
+test 'fit per segment puts a copy on every vertex whatever the spacing' do
+  path = build_path([[0, 0, 0], [400, 0, 0], [400, 300, 0], [0, 300, 0]])
+  [30.0, 345.0, 1000.0].each do |spacing|
+    distances = Distribution.distances(path, settings_with(distribution: :segments, spacing: spacing))
+    [0.0, 400.0, 700.0, 1100.0].each do |vertex|
+      assert distances.any? { |d| (d - vertex).abs < 1.0e-6 }, "spacing #{spacing}: no copy at vertex #{vertex}"
+    end
+  end
+end
+
+test 'fit per segment rounds the count inside each segment separately' do
+  path = build_path([[0, 0, 0], [400, 0, 0], [400, 300, 0]])
+  distances = Distribution.distances(path, settings_with(distribution: :segments, spacing: 100.0))
+  # 400 -> 4 intervals, 300 -> 3 intervals, shared vertex counted once.
+  assert_equal [0, 100, 200, 300, 400, 500, 600, 700], distances.map { |d| d.round(6) }
+end
+
+test 'fit per segment never drops below one interval per segment' do
+  path = build_path([[0, 0, 0], [10, 0, 0], [10, 500, 0]])
+  distances = Distribution.distances(path, settings_with(distribution: :segments, spacing: 100.0))
+  assert_equal [0, 10, 110, 210, 310, 410, 510], distances.map { |d| d.round(6) }
+end
+
+test 'fit per segment on a closed loop does not double the seam' do
+  square = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0], [0, 100, 0], [0, 0, 0]], closed: true)
+  distances = Distribution.distances(square, settings_with(distribution: :segments, spacing: 50.0))
+  assert_equal [0, 50, 100, 150, 200, 250, 300, 350], distances.map { |d| d.round(6) }
+end
+
+test 'fit per segment honours offsets by dropping what falls outside' do
+  path = build_path([[0, 0, 0], [400, 0, 0]])
+  distances = Distribution.distances(path, settings_with(distribution: :segments, spacing: 100.0,
+                                                          start_offset: 50.0, end_offset: 50.0))
+  assert_equal [100, 200, 300], distances.map { |d| d.round(6) }
+end

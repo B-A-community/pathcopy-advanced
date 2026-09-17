@@ -108,7 +108,7 @@ module PCAFacing
     tool.send(:commit)
     first_origin = tool.instance_variable_get(:@created).first.transformation.origin.clone
 
-    tool.onKeyUp(82, 1, 0, view) # R
+    tool.onKeyDown(82, 1, 0, view) # R
     check('R reverses the path direction', settings.reverse_path == true)
     reversed_origin = tool.instance_variable_get(:@created).first.transformation.origin
     check('after R the first copy sits at the other end of the path',
@@ -117,7 +117,7 @@ module PCAFacing
     check('after R the copies point the other way',
           tool.instance_variable_get(:@created).first.transformation.xaxis.x < 0)
 
-    tool.onKeyUp(70, 1, 0, view) # F
+    tool.onKeyDown(70, 1, 0, view) # F
     check('F cycles the facing mode', settings.facing == :outward, settings.facing.inspect)
     check('the status summary names the new state',
           settings.summary.include?('Face outward') && settings.summary.include?('reversed'), settings.summary)

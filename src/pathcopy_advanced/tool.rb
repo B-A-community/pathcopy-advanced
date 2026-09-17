@@ -79,10 +79,19 @@ module BACommunity
         helper = view.pick_helper
         helper.do_pick(x, y)
 
+        additive = modifier?(flags)
+
         case @state
-        when :path   then choose_path(helper)
-        when :source then choose_source(helper, additive: modifier?(flags))
-        else              restart(helper, additive: modifier?(flags))
+        when :path
+          choose_path(helper, additive: additive)
+        when :source
+          if additive && pick_object(helper).nil? && (extra = hover_path(helper))
+            add_path(extra)
+          else
+            choose_source(helper, additive: additive)
+          end
+        else
+          restart(helper, additive: additive)
         end
 
         refresh(view)
@@ -102,9 +111,12 @@ module BACommunity
         refresh(view)
       end
 
-      def onKeyUp(key, _repeat, _flags, view)
-        handled = true
+      # Handled on key down, not key up: macOS delivers letters to onKeyUp
+      # unreliably and in lower case, and Tab only on the way down.
+      def onKeyDown(key, repeat, _flags, view)
+        return false if repeat > 1
 
+        handled = true
         case key
         when 9 # Tab
           @settings.cycle_distribution!
@@ -116,9 +128,9 @@ module BACommunity
           @settings.cycle_align!
         when VK_LEFT
           @settings.cycle_align!(-1)
-        when 70 # F
+        when 70, 102 # F / f
           @settings.cycle_facing!
-        when 82 # R
+        when 82, 114 # R / r
           @settings.reverse_path = !@settings.reverse_path
         else
           handled = false
@@ -149,7 +161,7 @@ module BACommunity
           return if length.nil?
 
           @settings.spacing = length
-          @settings.distribution = :spacing unless @settings.distribution == :fit
+          @settings.distribution = :spacing unless %i[fit segments].include?(@settings.distribution)
         end
 
         @settings.sanitize!
@@ -231,6 +243,13 @@ module BACommunity
         path = hover_path(helper)
         return unless path
 
+        # Modifier + an edge while placed: one more path, same objects.
+        if additive
+          add_path(path)
+          commit
+          return
+        end
+
         @created = []
         @committed = false
         @paths = [path]
@@ -283,15 +302,27 @@ module BACommunity
         a.points.first != b.points.first || a.points.size != b.points.size
       end
 
-      def choose_path(helper)
+      def choose_path(helper, additive: false)
         path = hover_path(helper)
         return UI.beep unless path
 
-        @paths = [path]
-        @sources = []
+        if additive && @paths.any?
+          add_path(path)
+        else
+          @paths = [path]
+          @sources = []
+        end
         @hover_path = nil
         @state = :source
         model.selection.clear
+      end
+
+      # Several separate runs of railing in one go: modifier-click each one.
+      def add_path(path)
+        duplicate = @paths.any? do |known|
+          known.points.size == path.points.size && known.points.first == path.points.first
+        end
+        @paths << path unless duplicate
       end
 
       def pick_object(helper)
@@ -417,16 +448,20 @@ module BACommunity
         Sketchup.set_status_text(vcb_value, SB_VCB_VALUE)
       end
 
+      # Ctrl on Windows, Option on macOS - whatever COPY_MODIFIER_MASK maps to.
+      MODIFIER = Sketchup.platform == :platform_osx ? 'Option' : 'Ctrl'
       HINTS = 'Tab: mode | Up/Down: orientation | Left/Right: align | F: facing | R: reverse | right-click: all'
 
       def prompt
         case @state
         when :path
-          "Click an edge or face to use as the path. [#{@settings.summary}]"
+          "Click an edge or face to use as the path (#{MODIFIER}+click adds more, " \
+            "or pre-select several). [#{@settings.summary}]"
         when :source
           queued = @sources.empty? ? '' : "#{@sources.size} queued. "
-          "Click the group/component to copy, Ctrl+click to add more. #{queued}" \
-            "#{preview_count} placements. #{HINTS}"
+          paths = @paths.size > 1 ? "#{@paths.size} paths. " : ''
+          "Click the group/component to copy, #{MODIFIER}+click adds objects or paths. " \
+            "#{paths}#{queued}#{preview_count} placements. #{HINTS}"
         else
           "#{@created.size} copies placed. Retype a value to update, Esc to remove them. #{HINTS}"
         end
@@ -437,6 +472,7 @@ module BACommunity
         when :count    then 'Copies'
         when :vertices then 'Vertices'
         when :fit      then 'Target spacing'
+        when :segments then 'Spacing per segment'
         else                'Spacing'
         end
       end

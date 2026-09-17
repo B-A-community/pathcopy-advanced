@@ -85,7 +85,7 @@ module PCAInteract
 
     # 4. Cycle orientation with the arrow key.
     before_orientation = settings.orientation
-    tool.onKeyUp(VK_UP, 1, 0, view)
+    tool.onKeyDown(VK_UP, 1, 0, view)
     check('Up arrow cycled the orientation',
           settings.orientation != before_orientation,
           "#{before_orientation} -> #{settings.orientation}")
@@ -94,7 +94,7 @@ module PCAInteract
 
     # 5. Tab cycles the distribution mode.
     before_mode = settings.distribution
-    tool.onKeyUp(9, 1, 0, view)
+    tool.onKeyDown(9, 1, 0, view)
     check('Tab cycled the distribution mode',
           settings.distribution != before_mode, "#{before_mode} -> #{settings.distribution}")
 

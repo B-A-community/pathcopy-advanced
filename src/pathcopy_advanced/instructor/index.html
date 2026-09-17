@@ -25,9 +25,10 @@
 <ol>
   <li>Click an edge to use as the path. Connected edges are followed
       automatically &mdash; no welding required. Click a face to use its outer
-      loop, or pre-select edges before starting the tool.</li>
-  <li>Click the group or component to copy. <kbd>Ctrl</kbd>+click adds more
-      objects, and copies then alternate between them.</li>
+      loop. <kbd>Ctrl</kbd>+click (<kbd>Option</kbd> on macOS) adds another
+      path; pre-selecting edges before starting the tool works too.</li>
+  <li>Click the group or component to copy. <kbd>Ctrl</kbd>/<kbd>Option</kbd>+click
+      adds more objects, and copies then alternate between them.</li>
   <li>Keep typing values or changing options. The copies rebuild in place, and
       the whole session is a single undo step.</li>
 </ol>
@@ -41,8 +42,10 @@
 
 <h2>Keys</h2>
 <dl>
-  <dt><kbd>Tab</kbd></dt><dd>Cycle distribution: spacing, count, fit, vertices.</dd>
-  <dt><kbd>&uarr;</kbd> <kbd>&darr;</kbd></dt><dd>Cycle orientation: flat, 3D, keep.</dd>
+  <dt><kbd>Tab</kbd></dt><dd>Cycle distribution: spacing, count, fit, fit per segment, vertices.</dd>
+  <dt><kbd>&uarr;</kbd> <kbd>&darr;</kbd></dt><dd>Cycle orientation: flat, 3D, path plane, keep.</dd>
+  <dt><kbd>F</kbd></dt><dd>On a closed path: as drawn, face outward, face inward.</dd>
+  <dt><kbd>R</kbd></dt><dd>Reverse the path direction.</dd>
   <dt><kbd>&larr;</kbd> <kbd>&rarr;</kbd></dt><dd>Cycle alignment: start, centered, end.</dd>
   <dt><kbd>Esc</kbd></dt><dd>Step back one stage; removes the copies first.</dd>
   <dt>Right-click</dt><dd>Every option, including offsets and randomisation.</dd>
@@ -55,6 +58,8 @@
   <li><b>Count</b> &mdash; a fixed number of copies, evenly spread.</li>
   <li><b>Fit spacing</b> &mdash; nearest spacing to the one you typed that
       divides the path evenly.</li>
+  <li><b>Fit per segment</b> &mdash; a copy on every vertex, spacing fitted
+      inside each segment. Railings and fences.</li>
   <li><b>Vertices</b> &mdash; one copy per corner of the path.</li>
 </ul>
 

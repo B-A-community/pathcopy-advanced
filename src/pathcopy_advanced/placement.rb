@@ -31,7 +31,8 @@ module BACommunity
         locals = sources.map { |item| local_transformation(item, settings.anchor) }
         random = settings.jitter ? Random.new(settings.seed + index_offset) : nil
         previous_basis = nil
-        turn_around = loop_flip?(path, settings)
+        up = settings.orientation == :planar ? path_up(path) : Z_AXIS
+        turn_around = loop_flip?(path, settings, up)
 
         distances.each_with_index.map do |distance, position|
           index = index_offset + position
@@ -40,7 +41,7 @@ module BACommunity
           along += symmetric(random, settings.jitter_along) if random
 
           point, tangent = path.sample(along)
-          basis = orientation_basis(tangent, settings.orientation, previous_basis)
+          basis = orientation_basis(tangent, settings.orientation, previous_basis, up)
           previous_basis = basis
 
           lateral  = settings.offset_lateral.to_f
@@ -102,27 +103,43 @@ module BACommunity
       # On a closed loop the side an object faces depends on nothing but the
       # direction the loop happened to be drawn in. A requested facing is
       # honoured by turning every copy 180 degrees when the winding disagrees.
-      def loop_flip?(path, settings)
+      def loop_flip?(path, settings, up = Z_AXIS)
         return false unless path.closed? && settings.facing != :auto
         return false if settings.orientation == :none
 
-        inward = lateral_points_inward?(path)
+        inward = lateral_points_inward?(path, up)
         return false if inward.nil?
 
         (settings.facing == :inward) != inward
       end
 
-      # In both path-following modes local +Y is Z x tangent, the left-hand
-      # side of travel. Seen from above, a counter-clockwise loop has its
-      # inside on the left; a clockwise one has it on the right.
+      # Local +Y is up x tangent, the left-hand side of travel. Looking down
+      # the frame's up axis, a counter-clockwise loop has its inside on the
+      # left; a clockwise one on the right. With a Z-up frame that is "seen
+      # from above"; with the path's own plane normal it works for a loop on a
+      # wall just as well.
       #
-      # Returns nil for a loop with no usable footprint in plan (vertical),
-      # where "inward" has no meaning relative to a Z-up frame.
-      def lateral_points_inward?(path)
+      # Returns nil when the loop has no footprint across that up axis, where
+      # "inward" has no meaning for the frame.
+      def lateral_points_inward?(path, up = Z_AXIS)
         normal = newell_normal(path.points)
-        return nil if normal.nil? || normal.z.abs < 1.0e-6
+        return nil if normal.nil?
 
-        normal.z.positive?
+        along = normal.dot(up)
+        return nil if along.abs < 1.0e-6
+
+        along.positive?
+      end
+
+      # The path's own plane normal, turned to point upward whenever it has an
+      # upward component so copies stay upright on a horizontal or sloping
+      # path; a vertical path keeps the normal as drawn. Straight or
+      # non-planar paths have no usable normal and fall back to Z.
+      def path_up(path)
+        normal = newell_normal(path.points)
+        return Z_AXIS if normal.nil?
+
+        normal.z.negative? ? normal.reverse : normal
       end
 
       # Newell's method: a plane normal for a polygon that need not be convex,
@@ -147,12 +164,29 @@ module BACommunity
       # +previous+ carries the last usable frame forward, so a strictly vertical
       # segment in flat mode holds the previous heading instead of collapsing to
       # an arbitrary 180 degrees the way the original's flat_angle did.
-      def orientation_basis(tangent, mode, previous = nil)
+      def orientation_basis(tangent, mode, previous = nil, up = Z_AXIS)
         case mode
         when :none      then Geom::Transformation.new
         when :tangent3d then basis_3d(tangent)
+        when :planar    then basis_planar(tangent, up, previous)
         else                 basis_flat(tangent, previous)
         end
+      end
+
+      # X along the path, Z along the path's plane normal, so a loop drawn on
+      # a wall carries its copies around in the wall, and any flip happens
+      # about that normal rather than about world Z.
+      def basis_planar(tangent, up, previous)
+        return basis_flat(tangent, previous) if up.parallel?(Z_AXIS)
+        return previous || Geom::Transformation.new if tangent.length < TOLERANCE
+
+        x_axis = tangent.normalize
+        y_axis = up.cross(x_axis)
+        return previous || Geom::Transformation.new if y_axis.length < TOLERANCE
+
+        y_axis.normalize!
+        z_axis = x_axis.cross(y_axis)
+        Geom::Transformation.axes(ORIGIN, x_axis, y_axis, z_axis)
       end
 
       def basis_flat(tangent, previous)

@@ -27,11 +27,35 @@ test 'sampling clamps outside the path instead of extrapolating' do
   assert_point [100, 0, 0], path.sample(500).first
 end
 
-test 'tangent at a corner is the average of the two segments' do
+test 'exactly on a sharp corner the copy follows the segment leaving it' do
+  # A fence post at a corner sits square to the next rail, not on the bisector.
   path = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0]])
   _, tangent = path.sample(100)
-  root = Math.sqrt(0.5)
-  assert_vector [root, root, 0], tangent
+  assert_vector [0, 1, 0], tangent
+end
+
+test 'on a gentle bend the tangent is still blended so arcs stay smooth' do
+  # 20 degrees between segments: well under the 45 degree corner threshold.
+  a = 20.0 * Math::PI / 180.0
+  path = build_path([[0, 0, 0], [100, 0, 0], [100 + 100 * Math.cos(a), 100 * Math.sin(a), 0]])
+  _, tangent = path.sample(100)
+  half = a / 2.0
+  assert_vector [Math.cos(half), Math.sin(half), 0], tangent, 1.0e-6
+end
+
+test 'every corner of a closed loop gets the same rule, seam included' do
+  square = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0], [0, 100, 0], [0, 0, 0]], closed: true)
+  headings = [0, 100, 200, 300].map { |d| square.sample(d).last }
+  assert_vector [1, 0, 0], headings[0]   # seam: leaving along the first segment
+  assert_vector [0, 1, 0], headings[1]
+  assert_vector [-1, 0, 0], headings[2]
+  assert_vector [0, -1, 0], headings[3]
+end
+
+test 'the open end of a path keeps the incoming direction' do
+  path = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0]])
+  _, tangent = path.sample(200)
+  assert_vector [0, 1, 0], tangent
 end
 
 test 'duplicate points are dropped so segments never have zero length' do

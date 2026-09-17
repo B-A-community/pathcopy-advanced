@@ -25,6 +25,7 @@ module BACommunity
           when :vertices then vertex_distances(path, from, to)
           when :count    then count_distances(path, options, from, span)
           when :fit      then fit_distances(path, options, from, span)
+          when :segments then segment_distances(path, options, from, to)
           else                spacing_distances(path, options, from, to, span)
           end
 
@@ -60,6 +61,34 @@ module BACommunity
         step = span / intervals
         total = closed_seam?(path, options) ? intervals : intervals + 1
         Array.new(total) { |i| from + i * step }
+      end
+
+      # Fence mode: every vertex gets a copy, and the spacing is fitted inside
+      # each segment separately. Asked for by the people who will use this for
+      # railings - a post that misses a corner is useless.
+      def segment_distances(path, options, from, to)
+        step = options.spacing.to_f
+        return [] if step <= TOLERANCE
+
+        cumulative = path.cumulative
+        result = []
+        (0...path.segment_count).each do |i|
+          start = cumulative[i]
+          length = cumulative[i + 1] - start
+          next if length <= TOLERANCE
+
+          intervals = [(length / step).round, 1].max.clamp(1, MAX_COPIES)
+          (0..intervals).each do |k|
+            distance = start + length * k / intervals
+            result << distance if result.empty? || (distance - result.last).abs > TOLERANCE
+          end
+          break if result.size >= MAX_COPIES
+        end
+
+        if closed_seam?(path, options) && result.size > 1 && (result.last - path.length).abs < TOLERANCE
+          result.pop
+        end
+        result.select { |d| d >= from - TOLERANCE && d <= to + TOLERANCE }
       end
 
       def spacing_distances(path, options, from, to, span)

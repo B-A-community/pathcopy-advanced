@@ -287,3 +287,56 @@ test 'alternate flip is applied on top of facing' do
   assert !lateral_towards_centre?(placed[0], centre)
   assert lateral_towards_centre?(placed[1], centre)
 end
+
+
+# --- follow path plane ------------------------------------------------------
+
+WALL_LOOP = [[0, 0, 0], [100, 0, 0], [100, 0, 100], [0, 0, 100], [0, 0, 0]].freeze
+
+test 'path_up is the plane normal, turned upward when it can be' do
+  assert_vector [0, 0, 1], Placement.path_up(build_path(CCW_SQUARE, closed: true))
+  assert_vector [0, 0, 1], Placement.path_up(build_path(CW_SQUARE, closed: true))
+  assert_vector [0, 0, 1], Placement.path_up(build_path([[0, 0, 0], [100, 0, 0]]))
+end
+
+test 'a loop on a wall has a horizontal plane normal' do
+  up = Placement.path_up(build_path(WALL_LOOP, closed: true))
+  assert (up.z.abs < 1.0e-9) && (up.y.abs - 1.0).abs < 1.0e-9, up.inspect
+end
+
+test 'planar orientation keeps the copy in the wall and its Z along the wall normal' do
+  path = build_path(WALL_LOOP, closed: true)
+  settings = settings_with(distribution: :count, count: 4, orientation: :planar)
+  placed = place(path, settings, instance_with)
+  placed.each do |t|
+    assert t.zaxis.z.abs < 1.0e-9, "Z should lie in plan, got #{t.zaxis}"
+    assert t.xaxis.y.abs < 1.0e-9, "X should stay in the wall, got #{t.xaxis}"
+  end
+end
+
+test 'planar orientation on a horizontal loop is the flat orientation' do
+  path = build_path(CCW_SQUARE, closed: true)
+  settings = settings_with(distribution: :count, count: 4)
+  flat = place(path, settings_with(distribution: :count, count: 4, orientation: :flat), instance_with)
+  planar = place(path, settings_with(distribution: :count, count: 4, orientation: :planar), instance_with)
+  flat.zip(planar).each do |a, b|
+    assert_vector a.xaxis.to_a, b.xaxis
+    assert_vector a.zaxis.to_a, b.zaxis
+  end
+end
+
+test 'facing works on a wall loop in planar mode, where flat mode cannot' do
+  path = build_path(WALL_LOOP, closed: true)
+  centre = Geom::Point3d.new(50, 0, 50)
+  inward = place(path, settings_with(distribution: :count, count: 4, orientation: :planar, facing: :inward), instance_with)
+  outward = place(path, settings_with(distribution: :count, count: 4, orientation: :planar, facing: :outward), instance_with)
+  inward.each { |t| assert t.yaxis.dot(centre - t.origin) > 0, 'expected +Y into the loop' }
+  outward.each { |t| assert t.yaxis.dot(centre - t.origin) < 0, 'expected +Y out of the loop' }
+end
+
+test 'planar mode on a straight line falls back to flat' do
+  path = build_path([[0, 0, 0], [0, 100, 0]])
+  t = place(path, settings_with(distribution: :count, count: 1, orientation: :planar), instance_with).first
+  assert_vector [0, 1, 0], t.xaxis
+  assert_vector [0, 0, 1], t.zaxis
+end

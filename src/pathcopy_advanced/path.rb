@@ -93,23 +93,33 @@ module BACommunity
         [lo, segment_count - 1].min
       end
 
-      # At an interior vertex the two adjoining segments are averaged, so copies
-      # straddling a corner do not snap between two headings.
+      # Exactly on a vertex, the heading depends on how sharp the bend is.
+      # A gentle bend (a segmented arc) gets the averaged tangent, so copies do
+      # not visibly kink. A real corner gets the segment leaving the vertex -
+      # a fence post at a corner sits square to the next rail, not on the
+      # bisector. Averaging at corners was the bug where the one copy that
+      # landed on a vertex stood at 45 degrees to all its neighbours.
       def tangent_at(index, t)
         current = direction(index)
         return current unless @points.size > 2
 
-        if t < TOLERANCE && index > 0
-          blend(direction(index - 1), current)
-        elsif t < TOLERANCE && index.zero? && closed?
-          blend(direction(segment_count - 1), current)
-        elsif t > 1.0 - TOLERANCE && index < segment_count - 1
-          blend(current, direction(index + 1))
-        elsif t > 1.0 - TOLERANCE && index == segment_count - 1 && closed?
-          blend(current, direction(0))
+        if t < TOLERANCE
+          incoming = index.positive? ? direction(index - 1) : (closed? ? direction(segment_count - 1) : nil)
+          return current if incoming.nil?
+
+          smooth?(incoming, current) ? blend(incoming, current) : current
+        elsif t > 1.0 - TOLERANCE
+          outgoing = index < segment_count - 1 ? direction(index + 1) : (closed? ? direction(0) : nil)
+          return current if outgoing.nil?
+
+          smooth?(current, outgoing) ? blend(current, outgoing) : outgoing
         else
           current
         end
+      end
+
+      def smooth?(a, b)
+        a.dot(b) > SMOOTH_CORNER_COS
       end
 
       def direction(index)
