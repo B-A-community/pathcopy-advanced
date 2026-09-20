@@ -11,32 +11,39 @@ module BACommunity
       module_function
 
       def build(menu, settings, &on_change)
-        radio_group(menu.add_submenu('Distribution'), DISTRIBUTION_MODES,
+        menu.add_item('Панель настроек') do
+          settings.show_panel = true
+          settings.save
+          Panel.show(settings)
+        end
+        menu.add_separator
+
+        radio_group(menu.add_submenu('Расстановка'), DISTRIBUTION_MODES,
                     DISTRIBUTION_LABELS, settings, :distribution, &on_change)
-        radio_group(menu.add_submenu('Orientation'), ORIENTATION_MODES,
+        radio_group(menu.add_submenu('Ориентация'), ORIENTATION_MODES,
                     ORIENTATION_LABELS, settings, :orientation, &on_change)
-        radio_group(menu.add_submenu('Alignment'), ALIGN_MODES,
+        radio_group(menu.add_submenu('Остаток шага'), ALIGN_MODES,
                     ALIGN_LABELS, settings, :align, &on_change)
-        radio_group(menu.add_submenu('Anchor'), ANCHOR_MODES,
+        radio_group(menu.add_submenu('Точка привязки'), ANCHOR_MODES,
                     ANCHOR_LABELS, settings, :anchor, &on_change)
-        radio_group(menu.add_submenu('Facing on closed paths'), FACING_MODES,
+        radio_group(menu.add_submenu('Замкнутый контур'), FACING_MODES,
                     FACING_LABELS, settings, :facing, &on_change)
 
         menu.add_separator
-        toggle(menu, 'Skip closing copy on loops', settings, :skip_seam, &on_change)
-        toggle(menu, 'Reverse path direction', settings, :reverse_path, &on_change)
-        toggle(menu, 'Flip every second copy', settings, :alternate_flip, &on_change)
-        toggle(menu, 'Randomise placement', settings, :jitter, &on_change)
-        toggle(menu, 'Group the copies', settings, :group_result, &on_change)
+        toggle(menu, 'Не дублировать копию на стыке', settings, :skip_seam, &on_change)
+        toggle(menu, 'Развернуть направление пути', settings, :reverse_path, &on_change)
+        toggle(menu, 'Разворачивать каждую вторую', settings, :alternate_flip, &on_change)
+        toggle(menu, 'Разброс', settings, :jitter, &on_change)
+        toggle(menu, 'Сгруппировать копии', settings, :group_result, &on_change)
 
         menu.add_separator
-        menu.add_item('Offsets and rotation...') { offsets_dialog(settings, &on_change) }
-        menu.add_item('Randomisation...') { jitter_dialog(settings, &on_change) }
-        menu.add_item('Tag for copies...') { tag_dialog(settings, &on_change) }
+        menu.add_item('Смещения и поворот…') { offsets_dialog(settings, &on_change) }
+        menu.add_item('Разброс…') { jitter_dialog(settings, &on_change) }
+        menu.add_item('Тег для копий…') { tag_dialog(settings, &on_change) }
 
         menu.add_separator
-        menu.add_item('Reset all options') do
-          Settings::DEFAULTS.each { |key, value| settings.send("#{key}=", value) }
+        menu.add_item('Сбросить настройки') do
+          Settings::DEFAULTS.each { |key, value| settings.send("#{key}=", value) unless key == :show_panel }
           settings.sanitize!
           on_change&.call
         end
@@ -70,14 +77,14 @@ module BACommunity
       # --- dialogs -------------------------------------------------------
 
       def offsets_dialog(settings, &on_change)
-        prompts = ['Start offset', 'End offset', 'Sideways offset', 'Vertical offset',
-                   'Extra rotation (deg)']
+        prompts = ['Отступ от начала', 'Отступ от конца', 'Смещение вбок', 'Смещение вверх',
+                   'Доворот, °']
         defaults = [
           length(settings.start_offset), length(settings.end_offset),
           length(settings.offset_lateral), length(settings.offset_vertical),
           settings.extra_angle.to_s
         ]
-        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} - offsets")
+        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} — смещения")
         return unless result
 
         settings.start_offset    = to_inches(result[0], settings.start_offset)
@@ -90,8 +97,8 @@ module BACommunity
       end
 
       def jitter_dialog(settings, &on_change)
-        prompts = ['Rotation +/- (deg)', 'Scale +/- (%)', 'Along path +/-',
-                   'Sideways +/-', 'Vertical +/-', 'Random seed']
+        prompts = ['Поворот ±, °', 'Масштаб ±, %', 'Сдвиг вдоль ±',
+                   'Сдвиг вбок ±', 'Сдвиг вверх ±', 'Зерно']
         defaults = [
           settings.jitter_angle.to_s,
           (settings.jitter_scale * 100.0).round(1).to_s,
@@ -100,7 +107,7 @@ module BACommunity
           length(settings.jitter_vertical),
           settings.seed.to_s
         ]
-        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} - randomisation")
+        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} — разброс")
         return unless result
 
         settings.jitter_angle    = result[0].to_f
@@ -116,9 +123,9 @@ module BACommunity
 
       def tag_dialog(settings, &on_change)
         result = UI.inputbox(
-          ['Tag / layer for copies (blank = keep source tag)'],
+          ['Тег для копий (пусто — как у исходника)'],
           [settings.tag_name],
-          "#{PLUGIN_NAME} - result"
+          "#{PLUGIN_NAME} — результат"
         )
         return unless result
 

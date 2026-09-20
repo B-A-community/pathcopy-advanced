@@ -108,19 +108,21 @@ module PCAFacing
     tool.send(:commit)
     first_origin = tool.instance_variable_get(:@created).first.transformation.origin.clone
 
-    tool.onKeyDown(82, 1, 0, view) # R
-    check('R reverses the path direction', settings.reverse_path == true)
+    settings.reverse_path = true
+    tool.settings_changed
+    check('reverse from the panel flips the setting', settings.reverse_path == true)
     reversed_origin = tool.instance_variable_get(:@created).first.transformation.origin
-    check('after R the first copy sits at the other end of the path',
+    check('after reversing the first copy sits at the other end of the path',
           (reversed_origin.x - at(600, -800).x).abs < 1.0e-3 && (first_origin.x - at(0, -800).x).abs < 1.0e-3,
           "#{first_origin.x.round(1)} -> #{reversed_origin.x.round(1)}")
-    check('after R the copies point the other way',
+    check('after reversing the copies point the other way',
           tool.instance_variable_get(:@created).first.transformation.xaxis.x < 0)
 
-    tool.onKeyDown(70, 1, 0, view) # F
-    check('F cycles the facing mode', settings.facing == :outward, settings.facing.inspect)
+    settings.facing = :outward
+    tool.settings_changed
+    check('facing from the panel is applied', settings.facing == :outward, settings.facing.inspect)
     check('the status summary names the new state',
-          settings.summary.include?('Face outward') && settings.summary.include?('reversed'), settings.summary)
+          settings.summary.include?('Наружу') && settings.summary.include?('развёрнут'), settings.summary)
 
     tool.onCancel(0, view)
     tool.onCancel(0, view)

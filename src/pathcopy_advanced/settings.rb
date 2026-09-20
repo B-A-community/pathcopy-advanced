@@ -36,7 +36,8 @@ module BACommunity
         seed:            1,
 
         group_result:    false,
-        tag_name:        ''
+        tag_name:        '',
+        show_panel:      true
       }.freeze
 
       SYMBOL_KEYS = %i[distribution align orientation anchor facing].freeze
@@ -124,14 +125,14 @@ module BACommunity
         parts = [DISTRIBUTION_LABELS[@distribution]]
         parts << case @distribution
                  when :count    then @count.to_s
-                 when :vertices then '-'
+                 when :vertices then '—'
                  else                Sketchup.format_length(@spacing)
                  end
         parts << ORIENTATION_LABELS[@orientation]
         parts << ALIGN_LABELS[@align] if @distribution == :spacing
         parts << FACING_LABELS[@facing] unless @facing == :auto
-        parts << 'reversed' if @reverse_path
-        parts << 'jitter' if @jitter
+        parts << 'путь развёрнут' if @reverse_path
+        parts << 'разброс' if @jitter
         parts.join(' | ')
       end
 

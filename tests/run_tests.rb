@@ -2,10 +2,11 @@
 #
 # Zero-dependency test runner. Run with:  ruby tests/run_tests.rb
 
+require 'json'
 require_relative 'sketchup_stub'
 
 SRC = File.expand_path('../src/pathcopy_advanced', __dir__)
-%w[constants path path_builder distribution placement copier settings icons menus tool]
+%w[constants path path_builder distribution placement copier settings icons panel menus tool]
   .each do |file|
   require File.join(SRC, file)
 end

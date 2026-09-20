@@ -1,4 +1,4 @@
-# Regenerates the PNG icons from the same geometry the SVGs use.
+﻿# Regenerates the PNG icons from the same geometry the SVGs use.
 # SketchUp takes SVG on Windows for crisp HiDPI toolbars; the PNGs are the
 # fallback for macOS and for SketchUp 2015 and older.
 
@@ -93,6 +93,35 @@ function New-Cursor([string]$file) {
     Write-Output "wrote $target"
 }
 
+function New-PanelIcon([int]$size, [string]$file, [double]$stroke) {
+    # Three sliders: the options panel button.
+    $scale = $size / 24.0
+    $bmp = New-Object System.Drawing.Bitmap($size, $size)
+    $g = [System.Drawing.Graphics]::FromImage($bmp)
+    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $g.Clear([System.Drawing.Color]::Transparent)
+    $pen = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(255, 74, 74, 74), [single]($stroke * $scale))
+    $pen.StartCap = [System.Drawing.Drawing2D.LineCap]::Round
+    $pen.EndCap = [System.Drawing.Drawing2D.LineCap]::Round
+    foreach ($y in @(6.0, 12.0, 18.0)) {
+        $g.DrawLine($pen, [single](3 * $scale), [single]($y * $scale), [single](21 * $scale), [single]($y * $scale))
+    }
+    $fill = New-Object System.Drawing.SolidBrush([System.Drawing.Color]::FromArgb(255, 46, 125, 209))
+    $edge = New-Object System.Drawing.Pen([System.Drawing.Color]::FromArgb(255, 27, 79, 134), [single](1.0 * $scale))
+    foreach ($k in @(@(9.0, 6.0), @(16.0, 12.0), @(7.0, 18.0))) {
+        $r = 2.4 * $scale
+        $g.FillEllipse($fill, [single]($k[0] * $scale - $r), [single]($k[1] * $scale - $r), [single](2 * $r), [single](2 * $r))
+        $g.DrawEllipse($edge, [single]($k[0] * $scale - $r), [single]($k[1] * $scale - $r), [single](2 * $r), [single](2 * $r))
+    }
+    $g.Dispose()
+    $target = Join-Path $out $file
+    $bmp.Save($target, [System.Drawing.Imaging.ImageFormat]::Png)
+    $bmp.Dispose()
+    Write-Output "wrote $target"
+}
+
 New-Icon -size 24 -file "pca_large.png" -boxSize 5.0 -stroke 1.6
 New-Icon -size 16 -file "pca_small.png" -boxSize 5.5 -stroke 2.0
+New-PanelIcon -size 24 -file "pca_panel_large.png" -stroke 1.6
+New-PanelIcon -size 16 -file "pca_panel_small.png" -stroke 2.2
 New-Cursor -file "pca_cursor.png"

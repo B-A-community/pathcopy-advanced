@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
 <meta charset="utf-8">
 <title>PathCopy Advanced</title>
@@ -21,47 +21,46 @@
 
 <h1>PathCopy Advanced</h1>
 
-<h2>Steps</h2>
+<h2>Шаги</h2>
 <ol>
-  <li>Click an edge to use as the path. Connected edges are followed
-      automatically &mdash; no welding required. Click a face to use its outer
-      loop. <kbd>Ctrl</kbd>+click (<kbd>Option</kbd> on macOS) adds another
-      path; pre-selecting edges before starting the tool works too.</li>
-  <li>Click the group or component to copy. <kbd>Ctrl</kbd>/<kbd>Option</kbd>+click
-      adds more objects, and copies then alternate between them.</li>
-  <li>Keep typing values or changing options. The copies rebuild in place, and
-      the whole session is a single undo step.</li>
+  <li>Кликните ребро — это путь. Соединённые рёбра подхватываются сами, сваривать
+      не нужно. Клик по грани берёт её контур. <kbd>Ctrl</kbd>+клик (<kbd>Option</kbd>
+      на Mac) добавляет ещё один путь; можно и выделить рёбра до запуска.</li>
+  <li>Кликните группу или компонент — его копируем. <kbd>Ctrl</kbd>/<kbd>Option</kbd>+клик
+      добавляет ещё объекты, копии будут чередоваться.</li>
+  <li>Дальше меняйте что угодно в панели настроек — копии перестраиваются на месте,
+      вся сессия остаётся одним шагом отмены.</li>
 </ol>
 
-<h2>Measurement box</h2>
+<h2>Поле измерений</h2>
 <dl>
-  <dt>48</dt><dd>Spacing between copies.</dd>
-  <dt>20x</dt><dd>Place exactly 20 copies, evenly spread.</dd>
-  <dt>0</dt><dd>Switch to one copy per path vertex.</dd>
+  <dt>1200</dt><dd>Шаг между копиями, в единицах модели.</dd>
+  <dt>20x</dt><dd>Ровно 20 копий, равномерно.</dd>
+  <dt>0</dt><dd>По одной копии на каждую вершину.</dd>
 </dl>
 
-<h2>Keys</h2>
+<h2>Клавиши</h2>
 <dl>
-  <dt><kbd>Tab</kbd></dt><dd>Cycle distribution: spacing, count, fit, fit per segment, vertices.</dd>
-  <dt><kbd>&uarr;</kbd> <kbd>&darr;</kbd></dt><dd>Cycle orientation: flat, 3D, path plane, keep.</dd>
-  <dt><kbd>F</kbd></dt><dd>On a closed path: as drawn, face outward, face inward.</dd>
-  <dt><kbd>R</kbd></dt><dd>Reverse the path direction.</dd>
-  <dt><kbd>&larr;</kbd> <kbd>&rarr;</kbd></dt><dd>Cycle alignment: start, centered, end.</dd>
-  <dt><kbd>Esc</kbd></dt><dd>Step back one stage; removes the copies first.</dd>
-  <dt>Right-click</dt><dd>Every option, including offsets and randomisation.</dd>
+  <dt><kbd>Tab</kbd></dt><dd>Следующий режим: шаг, количество, подгонка, подгонка по сегментам, по вершинам.</dd>
+  <dt><kbd>&uarr;</kbd> <kbd>&darr;</kbd></dt><dd>Ориентация: в плане, в 3D, по плоскости пути, не поворачивать.</dd>
+  <dt><kbd>&larr;</kbd> <kbd>&rarr;</kbd></dt><dd>Куда девать остаток шага: от начала, по центру, от конца.</dd>
+  <dt><kbd>Esc</kbd></dt><dd>Шаг назад; сначала убирает поставленные копии.</dd>
+  <dt>Правая кнопка</dt><dd>То же меню, что и панель, если панель закрыта.</dd>
 </dl>
 
-<h2>Modes</h2>
+<h2>Режимы расстановки</h2>
 <ul>
-  <li><b>Spacing</b> &mdash; fixed distance, leftover length handled by the
-      alignment setting.</li>
-  <li><b>Count</b> &mdash; a fixed number of copies, evenly spread.</li>
-  <li><b>Fit spacing</b> &mdash; nearest spacing to the one you typed that
-      divides the path evenly.</li>
-  <li><b>Fit per segment</b> &mdash; a copy on every vertex, spacing fitted
-      inside each segment. Railings and fences.</li>
-  <li><b>Vertices</b> &mdash; one copy per corner of the path.</li>
+  <li><b>Шаг</b> — фиксированное расстояние, остаток по выравниванию.</li>
+  <li><b>Количество</b> — ровно N копий на всю длину.</li>
+  <li><b>Подгонка шага</b> — ближайший к заданному шаг, делящий путь нацело.</li>
+  <li><b>Подгонка по сегментам</b> — копия в каждой вершине, шаг подгоняется внутри
+      каждого сегмента. Ограждения.</li>
+  <li><b>По вершинам</b> — по одной копии на каждый узел.</li>
 </ul>
+
+<h2>Поперёк пути</h2>
+<p>Кнопка «Поперёк» в панели (или доворот 90°): ось X объекта встаёт перпендикулярно линии —
+столбики ограждения смотрят через рельс, а не вдоль него.</p>
 
 </body>
 </html>

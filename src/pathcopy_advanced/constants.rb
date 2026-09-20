@@ -3,7 +3,7 @@
 module BACommunity
   module PathCopyAdvanced
     PLUGIN_NAME = 'PathCopy Advanced'
-    VERSION     = '0.3.0'
+    VERSION     = '0.4.0'
 
     # Geometric tolerance, in inches (SketchUp's internal unit).
     # SketchUp itself collapses geometry below 0.001", so we stay an order below.
@@ -28,37 +28,38 @@ module BACommunity
     FACING_MODES       = %i[auto outward inward].freeze
     ANCHOR_MODES       = %i[origin center bottom].freeze
 
+    # Подписи на русском: интерфейс плагинов B&A русский (design/designcode.md).
     DISTRIBUTION_LABELS = {
-      spacing:  'Spacing',
-      count:    'Count',
-      fit:      'Fit spacing',
-      segments: 'Fit per segment',
-      vertices: 'Vertices'
+      spacing:  'Шаг',
+      count:    'Количество',
+      fit:      'Подгонка шага',
+      segments: 'Подгонка по сегментам',
+      vertices: 'По вершинам'
     }.freeze
 
     ORIENTATION_LABELS = {
-      flat:      'Follow path (flat)',
-      tangent3d: 'Follow path (3D)',
-      planar:    'Follow path plane',
-      none:      'Keep orientation'
+      flat:      'По пути, в плане',
+      tangent3d: 'По пути, в 3D',
+      planar:    'По плоскости пути',
+      none:      'Не поворачивать'
     }.freeze
 
     ANCHOR_LABELS = {
-      origin: 'Object origin',
-      center: 'Bounds center',
-      bottom: 'Bounds bottom center'
+      origin: 'Начало координат объекта',
+      center: 'Центр габаритов',
+      bottom: 'Низ габаритов'
     }.freeze
 
     FACING_LABELS = {
-      auto:    'As drawn',
-      outward: 'Face outward',
-      inward:  'Face inward'
+      auto:    'Как нарисовано',
+      outward: 'Наружу',
+      inward:  'Внутрь'
     }.freeze
 
     ALIGN_LABELS = {
-      start:  'From start',
-      center: 'Centered',
-      end:    'From end'
+      start:  'От начала',
+      center: 'По центру',
+      end:    'От конца'
     }.freeze
 
     # Preview colors.

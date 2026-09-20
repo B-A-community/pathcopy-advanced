@@ -123,10 +123,8 @@ module PCAFence
 
     tool.onKeyDown(9, 1, 0, view)                                    # Tab cycles the mode
     check('Tab on key down cycles the mode', settings.distribution != :segments, settings.distribution.inspect)
-    tool.onKeyDown(102, 1, 0, view)                                  # lower-case f, as macOS sends it
-    check('lower-case f is accepted for facing', settings.facing == :outward, settings.facing.inspect)
-    tool.onKeyDown(114, 1, 0, view)                                  # lower-case r
-    check('lower-case r is accepted for reverse', settings.reverse_path == true)
+    check('bare letters are no longer bound - they belong to SketchUp shortcuts',
+          tool.onKeyDown(82, 1, 0, view) == false && settings.reverse_path == false)
     check('the hint names the platform modifier', ns::Tool::MODIFIER == (Sketchup.platform == :platform_osx ? 'Option' : 'Ctrl'))
 
     tool.onCancel(0, view)

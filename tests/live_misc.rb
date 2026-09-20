@@ -25,25 +25,26 @@
     fired = 0
     ns::Menus.build(menu, settings) { fired += 1 }
 
-    check('menu has the four option submenus',
-          %w[Distribution Orientation Alignment Anchor].all? { |k| menu.subs.key?(k) },
+    check('menu has the option submenus',
+          %w[Расстановка Ориентация Остаток\ шага Точка\ привязки Замкнутый\ контур].all? { |k| menu.subs.key?(k) },
           menu.subs.keys.inspect)
-    dist = menu.subs['Distribution']
+    check('the panel item is the first entry', menu.items.first.first == 'Панель настроек', menu.items.first.first)
+    dist = menu.subs['Расстановка']
     check('distribution submenu lists every mode', dist.items.size == ns::DISTRIBUTION_MODES.size, dist.items.size)
     labels = dist.items.map(&:first)
-    count_id = dist.items.find { |l, _, _| l == 'Count' }.last
-    spacing_id = dist.items.find { |l, _, _| l == 'Spacing' }.last
+    count_id = dist.items.find { |l, _, _| l == 'Количество' }.last
+    spacing_id = dist.items.find { |l, _, _| l == 'Шаг' }.last
     check('validation proc marks the current mode with MF_CHECKED',
           dist.procs[count_id].call == MF_CHECKED && dist.procs[spacing_id].call == MF_UNCHECKED)
-    dist.items.find { |l, _, _| l == 'Fit spacing' }[1].call
+    dist.items.find { |l, _, _| l == 'Подгонка шага' }[1].call
     check('choosing a mode from the menu updates settings and fires the callback',
           settings.distribution == :fit && fired == 1, "#{settings.distribution} fired=#{fired}")
-    toggle = menu.items.find { |l, _, _| l == 'Randomise placement' }
+    toggle = menu.items.find { |l, _, _| l == 'Разброс' }
     toggle[1].call
     check('a toggle flips its setting', settings.jitter == true)
     check('toggle validation reflects the new state',
           menu.procs[toggle.last].call == MF_CHECKED)
-    reset = menu.items.find { |l, _, _| l == 'Reset all options' }
+    reset = menu.items.find { |l, _, _| l == 'Сбросить настройки' }
     reset[1].call
     check('reset restores defaults', settings.distribution == :spacing && settings.jitter == false)
 

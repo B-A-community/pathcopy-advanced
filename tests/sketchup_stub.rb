@@ -547,6 +547,29 @@ module Sketchup
 end
 
 module UI
+  # Enough of HtmlDialog for Panel to load and be driven offline.
+  class HtmlDialog
+    STYLE_DIALOG = 0
+    STYLE_WINDOW = 1
+    STYLE_UTILITY = 2
+    attr_reader :callbacks, :scripts, :file
+
+    def initialize(_options = {})
+      @callbacks = {}
+      @scripts = []
+      @visible = false
+    end
+
+    def set_file(path) = @file = path
+    def add_action_callback(name, &block) = @callbacks[name] = block
+    def set_on_closed(&block) = @on_closed = block
+    def execute_script(js) = @scripts << js
+    def show = @visible = true
+    def close = (@visible = false; @on_closed&.call)
+    def visible? = @visible
+    def bring_to_front; end
+  end
+
   def self.beep; end
 
   def self.messagebox(*); end

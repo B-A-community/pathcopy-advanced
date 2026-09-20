@@ -25,14 +25,32 @@ module BACommunity
       def activate
         @cursor ||= Icons.cursor('pca_cursor', 4, 4)
         adopt_selection
+        Panel.show(@settings) if @settings.show_panel
+        Panel.attach(self, @settings)
         refresh
       end
 
       def deactivate(view)
         @settings.save
+        Panel.detach(self)
         Sketchup.set_status_text('', SB_VCB_LABEL)
         Sketchup.set_status_text('', SB_VCB_VALUE)
         view.invalidate if view
+      end
+
+      # --- panel hooks ---------------------------------------------------
+
+      # The panel changed a value: rebuild whatever is placed and redraw.
+      def settings_changed
+        apply
+      end
+
+      def panel_status
+        case @state
+        when :path   then 'Кликните ребро или грань — это путь.'
+        when :source then "Путь выбран. Кликните группу или компонент. Мест: #{preview_count}."
+        else              "Поставлено копий: #{@created.size}. Меняйте что угодно — перестроятся."
+        end
       end
 
       def suspend(view)
@@ -111,8 +129,10 @@ module BACommunity
         refresh(view)
       end
 
-      # Handled on key down, not key up: macOS delivers letters to onKeyUp
-      # unreliably and in lower case, and Tab only on the way down.
+      # Only keys SketchUp itself does not hand out as shortcuts: a bare letter
+      # in a tool loses to whatever the user bound it to (R is the Rectangle
+      # tool by default), so letters live in the panel instead. Key down, not
+      # key up - macOS delivers Tab only on the way down.
       def onKeyDown(key, repeat, _flags, view)
         return false if repeat > 1
 
@@ -128,10 +148,6 @@ module BACommunity
           @settings.cycle_align!
         when VK_LEFT
           @settings.cycle_align!(-1)
-        when 70, 102 # F / f
-          @settings.cycle_facing!
-        when 82, 114 # R / r
-          @settings.reverse_path = !@settings.reverse_path
         else
           handled = false
         end
@@ -383,7 +399,7 @@ module BACommunity
       rescue StandardError => error
         @created = []
         @state = :source
-        UI.messagebox("PathCopy Advanced could not place the copies:\n\n#{error.message}")
+        UI.messagebox("PathCopy Advanced не смог расставить копии:\n\n#{error.message}")
       end
 
       def all_transformations(sources)
@@ -403,6 +419,7 @@ module BACommunity
       def refresh(view = nil)
         rebuild_preview
         update_status
+        Panel.push
         (view || model.active_view).invalidate
       end
 
@@ -450,30 +467,30 @@ module BACommunity
 
       # Ctrl on Windows, Option on macOS - whatever COPY_MODIFIER_MASK maps to.
       MODIFIER = Sketchup.platform == :platform_osx ? 'Option' : 'Ctrl'
-      HINTS = 'Tab: mode | Up/Down: orientation | Left/Right: align | F: facing | R: reverse | right-click: all'
+      HINTS = 'Tab — режим, ↑↓ — ориентация, ←→ — остаток, всё остальное — в панели'
 
       def prompt
         case @state
         when :path
-          "Click an edge or face to use as the path (#{MODIFIER}+click adds more, " \
-            "or pre-select several). [#{@settings.summary}]"
+          "Кликните ребро или грань — это путь (#{MODIFIER}+клик добавляет ещё один, " \
+            "или выделите рёбра заранее). [#{@settings.summary}]"
         when :source
-          queued = @sources.empty? ? '' : "#{@sources.size} queued. "
-          paths = @paths.size > 1 ? "#{@paths.size} paths. " : ''
-          "Click the group/component to copy, #{MODIFIER}+click adds objects or paths. " \
-            "#{paths}#{queued}#{preview_count} placements. #{HINTS}"
+          queued = @sources.empty? ? '' : "В очереди объектов: #{@sources.size}. "
+          paths = @paths.size > 1 ? "Путей: #{@paths.size}. " : ''
+          "Кликните группу или компонент — его копируем; #{MODIFIER}+клик добавляет объекты и пути. " \
+            "#{paths}#{queued}Мест: #{preview_count}. #{HINTS}"
         else
-          "#{@created.size} copies placed. Retype a value to update, Esc to remove them. #{HINTS}"
+          "Поставлено копий: #{@created.size}. Введите новое значение — перестроятся; Esc убирает их. #{HINTS}"
         end
       end
 
       def vcb_label
         case @settings.distribution
-        when :count    then 'Copies'
-        when :vertices then 'Vertices'
-        when :fit      then 'Target spacing'
-        when :segments then 'Spacing per segment'
-        else                'Spacing'
+        when :count    then 'Копий'
+        when :vertices then 'Вершин'
+        when :fit      then 'Шаг, подгонка'
+        when :segments then 'Шаг в сегменте'
+        else                'Шаг'
         end
       end
 

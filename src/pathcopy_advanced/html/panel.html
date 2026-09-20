@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>PathCopy Advanced</title>
+<!-- Дизайн-код плагинов B&A: ba.css / ba.js лежат рядом, правила — design/designcode.md в ralncs -->
+<link rel="stylesheet" href="ba.css">
+<style>
+  /* Компактная утилитарная панель: группы полей друг под другом */
+  #wrap { padding: 4px 14px 14px; }
+  .group { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 8px 12px 10px; margin-top: 8px; }
+  .group h3 { margin: 0 0 6px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 3px 0; }
+  .row label.name { flex: 0 0 118px; color: #555; }
+  .row select, .row input[type="text"] { flex: 1; min-width: 0; padding: 4px 8px; }
+  .row input[type="text"].short { flex: 0 0 90px; }
+  .row input[type="text"].tiny { flex: 0 0 58px; }
+  .row .unit { color: #888; font-size: 11px; }
+  .row label.opt { padding: 2px 0; }
+  .quick { display: flex; gap: 4px; }
+  .quick button { padding: 3px 8px; font-size: 12px; }
+  .row label.name.narrow { flex-basis: 96px; }
+  .hint { color: #888; font-size: 11px; line-height: 1.4; margin-top: 4px; }
+  #status { min-height: 30px; }
+  #status .stage { color: #1c1c1c; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+  <header>
+    <span class="code">PathCopy Advanced</span>
+    <span class="spacer"></span>
+    <button id="btnReset" title="Вернуть все настройки к исходным">Сброс</button>
+  </header>
+  <div id="status"><span class="stage">…</span></div>
+
+  <div id="wrap">
+    <div class="group">
+      <h3>Расстановка</h3>
+      <div class="row">
+        <label class="name" for="distribution">Режим</label>
+        <select id="distribution" data-key="distribution"></select>
+      </div>
+      <div class="row" id="rowSpacing">
+        <label class="name" for="spacing">Шаг</label>
+        <input type="text" id="spacing" data-key="spacing" class="short">
+        <span class="unit" id="spacingHint"></span>
+      </div>
+      <div class="row" id="rowCount">
+        <label class="name" for="count">Копий</label>
+        <input type="text" id="count" data-key="count" class="short">
+      </div>
+      <div class="row" id="rowAlign">
+        <label class="name" for="align">Остаток</label>
+        <select id="align" data-key="align"></select>
+      </div>
+      <div class="row">
+        <label class="name" for="start_offset">Отступы</label>
+        <input type="text" id="start_offset" data-key="start_offset" class="short" title="От начала пути">
+        <input type="text" id="end_offset" data-key="end_offset" class="short" title="От конца пути">
+        <span class="unit">начало / конец</span>
+      </div>
+      <div class="row">
+        <label class="opt"><input type="checkbox" id="skip_seam" data-key="skip_seam"> на замкнутом контуре не дублировать копию на стыке</label>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Ориентация</h3>
+      <div class="row">
+        <label class="name" for="orientation">Поворот</label>
+        <select id="orientation" data-key="orientation"></select>
+      </div>
+      <div class="row">
+        <label class="name narrow">Относительно пути</label>
+        <span class="quick">
+          <button data-angle="0" title="Ось X объекта вдоль пути">Вдоль</button>
+          <button data-angle="90" title="Ось X объекта поперёк пути">Поперёк</button>
+        </span>
+        <input type="text" id="extra_angle" data-key="extra_angle" class="tiny" title="Доворот вокруг вертикальной оси объекта">
+        <span class="unit">°</span>
+      </div>
+      <div class="row">
+        <label class="name" for="anchor">Точка привязки</label>
+        <select id="anchor" data-key="anchor"></select>
+      </div>
+      <div class="row" id="rowFacing">
+        <label class="name" for="facing">Замкнутый контур</label>
+        <select id="facing" data-key="facing"></select>
+      </div>
+      <div class="row">
+        <label class="opt"><input type="checkbox" id="reverse_path" data-key="reverse_path"> развернуть направление пути</label>
+      </div>
+      <div class="row">
+        <label class="opt"><input type="checkbox" id="alternate_flip" data-key="alternate_flip"> разворачивать каждую вторую копию</label>
+      </div>
+      <div class="row">
+        <label class="name" for="offset_lateral">Смещение</label>
+        <input type="text" id="offset_lateral" data-key="offset_lateral" class="short" title="Вбок от пути (влево по ходу — положительное)">
+        <input type="text" id="offset_vertical" data-key="offset_vertical" class="short" title="По нормали пути">
+        <span class="unit">вбок / вверх</span>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><label class="opt"><input type="checkbox" id="jitter" data-key="jitter"> Разброс</label></h3>
+      <div id="jitterBody">
+        <div class="row">
+          <label class="name" for="jitter_angle">Поворот ±</label>
+          <input type="text" id="jitter_angle" data-key="jitter_angle" class="short"><span class="unit">°</span>
+          <label class="name" for="jitter_scale" style="flex-basis:auto">Масштаб ±</label>
+          <input type="text" id="jitter_scale" data-key="jitter_scale" class="short"><span class="unit">%</span>
+        </div>
+        <div class="row">
+          <label class="name" for="jitter_along">Сдвиг ±</label>
+          <input type="text" id="jitter_along" data-key="jitter_along" class="short" title="Вдоль пути">
+          <input type="text" id="jitter_lateral" data-key="jitter_lateral" class="short" title="Вбок">
+          <input type="text" id="jitter_vertical" data-key="jitter_vertical" class="short" title="Вверх">
+        </div>
+        <div class="row">
+          <label class="name" for="seed">Зерно</label>
+          <input type="text" id="seed" data-key="seed" class="short" title="Одно и то же число — один и тот же разброс">
+          <span class="unit">вдоль / вбок / вверх — в единицах модели</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3>Результат</h3>
+      <div class="row">
+        <label class="name" for="tag_name">Тег копий</label>
+        <input type="text" id="tag_name" data-key="tag_name" placeholder="как у исходника">
+      </div>
+      <div class="row">
+        <label class="opt"><input type="checkbox" id="group_result" data-key="group_result"> сгруппировать копии</label>
+      </div>
+    </div>
+
+    <div class="hint">Всё применяется сразу, копии перестраиваются на месте; вся сессия — один шаг отмены (Ctrl+Z).
+      В поле измерений SketchUp: число — шаг, <b>20x</b> — двадцать копий, <b>0</b> — по вершинам.
+      Tab — следующий режим, ↑↓ — ориентация, ←→ — остаток.</div>
+  </div>
+  <div id="toast"></div>
+
+  <script src="ba.js"></script>
+  <script>
+  (function () {
+    var pca = {};
+    var byId = function (id) { return document.getElementById(id); };
+    var ready = false;
+
+    // Заполнение селектов приходит из Ruby вместе с настройками: один источник подписей.
+    function fillSelect(sel, options, value) {
+      if (sel.dataset.filled !== '1') {
+        sel.innerHTML = options.map(function (o) {
+          return '<option value="' + BA.esc(o[0]) + '">' + BA.esc(o[1]) + '</option>';
+        }).join('');
+        sel.dataset.filled = '1';
+      }
+      sel.value = value;
+    }
+
+    function send(key, value) {
+      if (!ready) return;
+      if (window.sketchup && sketchup.set) sketchup.set(key, String(value));
+    }
+
+    // Ruby -> панель. Значения выставляются без событий, чтобы не уйти в цикл.
+    pca.update = function (s) {
+      fillSelect(byId('distribution'), s.options.distribution, s.distribution);
+      fillSelect(byId('orientation'), s.options.orientation, s.orientation);
+      fillSelect(byId('align'), s.options.align, s.align);
+      fillSelect(byId('anchor'), s.options.anchor, s.anchor);
+      fillSelect(byId('facing'), s.options.facing, s.facing);
+
+      ['spacing', 'count', 'start_offset', 'end_offset', 'extra_angle', 'offset_lateral', 'offset_vertical',
+       'jitter_angle', 'jitter_scale', 'jitter_along', 'jitter_lateral', 'jitter_vertical', 'seed', 'tag_name']
+        .forEach(function (k) { if (document.activeElement !== byId(k)) byId(k).value = s[k]; });
+      ['skip_seam', 'reverse_path', 'alternate_flip', 'jitter', 'group_result']
+        .forEach(function (k) { byId(k).checked = !!s[k]; });
+
+      var d = s.distribution;
+      byId('rowSpacing').classList.toggle('hidden', d === 'count' || d === 'vertices');
+      byId('rowCount').classList.toggle('hidden', d !== 'count');
+      byId('rowAlign').classList.toggle('hidden', d !== 'spacing');
+      byId('spacingHint').textContent = d === 'fit' ? 'подгоняется под длину' : d === 'segments' ? 'подгоняется в каждом сегменте' : '';
+      byId('rowFacing').classList.toggle('hidden', s.orientation === 'none');
+      byId('jitterBody').classList.toggle('hidden', !s.jitter);
+
+      document.querySelectorAll('.quick button').forEach(function (b) {
+        b.classList.toggle('on', Number(b.dataset.angle) === Number(s.extra_angle));
+      });
+      byId('status').innerHTML = '<span class="stage">' + BA.esc(s.status) + '</span>';
+      ready = true;
+    };
+
+    document.querySelectorAll('[data-key]').forEach(function (el) {
+      var key = el.dataset.key;
+      if (el.type === 'checkbox') {
+        el.addEventListener('change', function () { send(key, el.checked); });
+      } else if (el.tagName === 'SELECT') {
+        el.addEventListener('change', function () { send(key, el.value); });
+      } else {
+        el.addEventListener('change', function () { send(key, el.value); });
+        el.addEventListener('keydown', function (e) { if (e.key === 'Enter') el.blur(); });
+      }
+    });
+    document.querySelectorAll('.quick button').forEach(function (b) {
+      b.addEventListener('click', function () { send('extra_angle', b.dataset.angle); });
+    });
+    byId('btnReset').addEventListener('click', function () {
+      if (window.sketchup && sketchup.reset) sketchup.reset();
+    });
+
+    window.pca = pca;
+    if (window.sketchup && sketchup.ready) sketchup.ready();
+  })();
+  </script>
+</body>
+</html>
