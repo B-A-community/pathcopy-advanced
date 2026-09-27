@@ -35,12 +35,22 @@ module BACommunity
         jitter_vertical: 0.0,
         seed:            1,
 
+        nudge_angle:     90.0,
+
+        rail:            false,
+        rail_align:      :center,
+        rail_width:      50.0 / 25.4,
+        rail_height:     50.0 / 25.4,
+        rail_shape:      :rect,
+        rail_extend:     0.0,
+        rail_rise:       0.0,
+
         group_result:    false,
         tag_name:        '',
         show_panel:      true
       }.freeze
 
-      SYMBOL_KEYS = %i[distribution align orientation anchor facing].freeze
+      SYMBOL_KEYS = %i[distribution align orientation anchor facing rail_align rail_shape].freeze
 
       DEFAULTS.each_key { |key| attr_accessor key }
 
@@ -78,6 +88,15 @@ module BACommunity
         @align        = :start   unless ALIGN_MODES.include?(@align)
         @anchor       = :origin  unless ANCHOR_MODES.include?(@anchor)
         @facing       = :auto    unless FACING_MODES.include?(@facing)
+        @rail_shape   = :rect    unless RAIL_SHAPES.include?(@rail_shape)
+        @rail_align   = :center  unless RAIL_ALIGN_MODES.include?(@rail_align)
+
+        @rail_width  = DEFAULTS[:rail_width]  unless @rail_width.to_f > TOLERANCE
+        @rail_height = DEFAULTS[:rail_height] unless @rail_height.to_f > TOLERANCE
+        @rail_extend = [@rail_extend.to_f, 0.0].max
+        @rail_rise = @rail_rise.to_f
+        @nudge_angle = @nudge_angle.to_f
+        @nudge_angle = DEFAULTS[:nudge_angle] if @nudge_angle.abs < TOLERANCE
 
         @spacing = DEFAULTS[:spacing] unless @spacing.to_f > TOLERANCE
         @count   = @count.to_i.clamp(1, MAX_COPIES)
@@ -133,6 +152,7 @@ module BACommunity
         parts << FACING_LABELS[@facing] unless @facing == :auto
         parts << 'путь развёрнут' if @reverse_path
         parts << 'разброс' if @jitter
+        parts << 'поручень' if @rail
         parts.join(' | ')
       end
 

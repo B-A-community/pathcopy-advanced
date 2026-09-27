@@ -3,7 +3,7 @@
 module BACommunity
   module PathCopyAdvanced
     PLUGIN_NAME = 'PathCopy Advanced'
-    VERSION     = '0.4.0'
+    VERSION     = '0.5.0'
 
     # Geometric tolerance, in inches (SketchUp's internal unit).
     # SketchUp itself collapses geometry below 0.001", so we stay an order below.
@@ -27,6 +27,8 @@ module BACommunity
     ALIGN_MODES        = %i[start center end].freeze
     FACING_MODES       = %i[auto outward inward].freeze
     ANCHOR_MODES       = %i[origin center bottom].freeze
+    RAIL_SHAPES        = %i[rect round].freeze
+    RAIL_ALIGN_MODES   = %i[center outward inward].freeze
 
     # Подписи на русском: интерфейс плагинов B&A русский (design/designcode.md).
     DISTRIBUTION_LABELS = {
@@ -52,6 +54,17 @@ module BACommunity
 
     FACING_LABELS = {
       auto:    'Как нарисовано',
+      outward: 'Наружу',
+      inward:  'Внутрь'
+    }.freeze
+
+    RAIL_SHAPE_LABELS = {
+      rect:  'Прямоугольное',
+      round: 'Круглое'
+    }.freeze
+
+    RAIL_ALIGN_LABELS = {
+      center:  'По центру',
       outward: 'Наружу',
       inward:  'Внутрь'
     }.freeze

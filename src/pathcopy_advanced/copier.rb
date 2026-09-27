@@ -12,21 +12,28 @@ module BACommunity
     module Copier
       module_function
 
+      # @param paths [Array<Path>] пути, вдоль которых тянуть поручень
       # @return [Array<Sketchup::Drawingelement>] the entities created
-      def run(model, sources, transformations, settings, merge_with_previous: false)
-        return [] if sources.empty? || transformations.empty?
+      def run(model, sources, transformations, settings, paths: [], merge_with_previous: false)
+        rails = settings.rail ? Array(paths) : []
+        copies_wanted = !sources.empty? && !transformations.empty?
+        return [] unless copies_wanted || !rails.empty?
 
         entities = model.active_entities
         model.start_operation(PLUGIN_NAME, true, false, merge_with_previous)
 
         begin
-          created = transformations.each_with_index.map do |transformation, index|
-            duplicate(entities, sources[index % sources.size], transformation)
+          created = []
+          if copies_wanted
+            transformations.each_with_index do |transformation, index|
+              created << duplicate(entities, sources[index % sources.size], transformation)
+            end
           end
+          rails.each { |path| created << Railing.build(entities, path, settings) }
           created.compact!
 
           apply_tag(model, created, settings.tag_name)
-          created = [wrap(entities, created, sources.first)] if settings.group_result && created.size > 1
+          created = [wrap(entities, created, sources.first)] if settings.group_result && created.size > 1 && !sources.empty?
 
           model.commit_operation
           created

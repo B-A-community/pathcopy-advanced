@@ -49,8 +49,31 @@ module BACommunity
         case @state
         when :path   then 'Кликните ребро или грань — это путь.'
         when :source then "Путь выбран. Кликните группу или компонент. Мест: #{preview_count}."
-        else              "Поставлено копий: #{@created.size}. Меняйте что угодно — перестроятся."
+        else
+          spun = @manual_spin.empty? ? '' : " Довёрнуто вручную: #{@manual_spin.size}."
+          "Готово: объектов #{@created.size}.#{spun} Клик по копии доворачивает её "             "на #{@settings.nudge_angle.round}°, Shift+клик — обратно."
         end
+      end
+
+      # Панель гасит настройки, которым нечего делать на текущем пути.
+      # Доворот отдельной копии кликом переживает перестройку: он привязан к
+      # номеру копии на пути, а не к самой сущности, которую мы пересоздаём.
+      def nudge(index, back)
+        step = @settings.nudge_angle.to_f
+        step = -step if back
+        @manual_spin[index] = ((@manual_spin[index] || 0.0) + step) % 360.0
+        @manual_spin.delete(index) if @manual_spin[index].abs < TOLERANCE
+        commit
+      end
+
+      def clear_nudges
+        @manual_spin = {}
+      end
+
+      def panel_context
+        paths = active_paths
+        { has_path: !paths.empty?, closed: !paths.empty? && paths.all?(&:closed?),
+          nudged: @manual_spin.size }
       end
 
       def suspend(view)
@@ -109,7 +132,7 @@ module BACommunity
             choose_source(helper, additive: additive)
           end
         else
-          restart(helper, additive: additive)
+          restart(helper, additive: additive, back: constrain?(flags))
         end
 
         refresh(view)
@@ -200,6 +223,7 @@ module BACommunity
         draw_paths(view)
         draw_markers(view)
         draw_boxes(view)
+        draw_rail(view)
       end
 
       # --- context menu --------------------------------------------------
@@ -226,7 +250,10 @@ module BACommunity
         @hover_path = nil
         @hover_source = nil
         @committed = false
+        @manual_spin = {}
+        @placed_count = 0
       end
+
 
       def step_back
         if @created.any?
@@ -244,7 +271,14 @@ module BACommunity
 
       # In the :placed stage a click either swaps the object being copied or
       # starts a fresh run on a new path.
-      def restart(helper, additive: false)
+      def restart(helper, additive: false, back: false)
+        # Клик по уже поставленной копии доворачивает именно её.
+        placed = helper.best_picked
+        if placed
+          index = @created.index(placed)
+          return nudge(index, back) if index && index < @placed_count
+        end
+
         picked = pick_object(helper)
         if picked
           if additive
@@ -270,6 +304,7 @@ module BACommunity
         @committed = false
         @paths = [path]
         @sources = []
+        clear_nudges
         @state = :source
       end
 
@@ -327,6 +362,7 @@ module BACommunity
         else
           @paths = [path]
           @sources = []
+          clear_nudges
         end
         @hover_path = nil
         @state = :source
@@ -376,23 +412,31 @@ module BACommunity
         (flags & COPY_MODIFIER_MASK) != 0
       end
 
+      def constrain?(flags)
+        return false unless defined?(CONSTRAIN_MODIFIER_MASK)
+
+        (flags & CONSTRAIN_MODIFIER_MASK) != 0
+      end
+
       # --- work ----------------------------------------------------------
 
       def commit
-        return if active_sources.empty? || @paths.empty?
+        return if @paths.empty?
+        return if active_sources.empty? && !@settings.rail
 
         Copier.erase(model, @created, merge_with_previous: true) if @created.any?
 
         transformations = all_transformations(active_sources)
-        if transformations.empty?
+        if transformations.empty? && !@settings.rail
           @created = []
           @state = :source
           return
         end
 
+        @placed_count = transformations.size
         @created = Copier.run(
           model, active_sources, transformations, @settings,
-          merge_with_previous: @committed
+          paths: active_paths, merge_with_previous: @committed
         )
         @committed = true
         @state = :placed
@@ -408,7 +452,8 @@ module BACommunity
         offset = 0
         active_paths.flat_map do |path|
           distances = Distribution.distances(path, @settings)
-          placed = Placement.transformations(path, distances, @settings, sources, index_offset: offset)
+          placed = Placement.transformations(path, distances, @settings, sources,
+                                             index_offset: offset, spins: @manual_spin)
           offset += placed.size
           placed
         end.first(MAX_COPIES)
@@ -439,7 +484,8 @@ module BACommunity
             if sources.empty?
               []
             else
-              Placement.transformations(path, distances, @settings, sources, index_offset: offset)
+              Placement.transformations(path, distances, @settings, sources,
+                                        index_offset: offset, spins: @manual_spin)
             end
           points =
             if transformations.any?
@@ -480,7 +526,7 @@ module BACommunity
           "Кликните группу или компонент — его копируем; #{MODIFIER}+клик добавляет объекты и пути. " \
             "#{paths}#{queued}Мест: #{preview_count}. #{HINTS}"
         else
-          "Поставлено копий: #{@created.size}. Введите новое значение — перестроятся; Esc убирает их. #{HINTS}"
+          "Готово: #{@created.size}. Клик по копии — доворот на #{@settings.nudge_angle.round}°, "             "Shift+клик — обратно; Esc убирает всё. #{HINTS}"
         end
       end
 
@@ -535,6 +581,34 @@ module BACommunity
 
         view.line_width = 2
         view.drawing_color = COLOR_MARKER
+        view.draw(GL_LINES, segments)
+      end
+
+      # Каркас поручня: контуры сечений и продольные рёбра профиля.
+      def draw_rail(view)
+        return unless @settings.rail
+
+        segments = []
+        active_paths.each do |path|
+          rings = Railing.sections(path, @settings)
+          next if rings.size < 2
+
+          rings.each do |ring|
+            ring.each_index { |i| segments << ring[i] << ring[(i + 1) % ring.size] }
+          end
+          limit = path.closed? ? rings.size : rings.size - 1
+          (0...limit).each do |i|
+            a = rings[i]
+            b = rings[(i + 1) % rings.size]
+            next unless a.size == b.size
+
+            a.each_index { |k| segments << a[k] << b[k] }
+          end
+        end
+        return if segments.empty?
+
+        view.line_width = 1
+        view.drawing_color = COLOR_PREVIEW
         view.draw(GL_LINES, segments)
       end
 

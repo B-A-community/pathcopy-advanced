@@ -340,3 +340,133 @@ test 'planar mode on a straight line falls back to flat' do
   assert_vector [0, 1, 0], t.xaxis
   assert_vector [0, 0, 1], t.zaxis
 end
+
+# --- ручной доворот отдельных копий ------------------------------------------
+
+test 'a manual spin turns just the copy it was asked for' do
+  path = build_path([[0, 0, 0], [300, 0, 0]])
+  settings = settings_with(distribution: :count, count: 4, orientation: :flat)
+  distances = Distribution.distances(path, settings)
+  plain = Placement.transformations(path, distances, settings, instance_with)
+  spun = Placement.transformations(path, distances, settings, instance_with, spins: { 1 => 90.0 })
+
+  assert_vector plain[0].xaxis.to_a, spun[0].xaxis
+  assert_vector [0, 1, 0], spun[1].xaxis
+  assert_vector plain[2].xaxis.to_a, spun[2].xaxis
+  assert_point plain[1].origin.to_a, spun[1].origin
+end
+
+test 'manual spins are keyed by the global index across paths' do
+  path = build_path([[0, 0, 0], [100, 0, 0]])
+  settings = settings_with(distribution: :count, count: 2, orientation: :flat)
+  distances = Distribution.distances(path, settings)
+  second = Placement.transformations(path, distances, settings, instance_with,
+                                     index_offset: 2, spins: { 3 => 180.0 })
+  assert_vector [1, 0, 0], second[0].xaxis
+  assert_vector [-1, 0, 0], second[1].xaxis
+end
+
+test 'a manual spin adds on top of the other rotations' do
+  path = build_path([[0, 0, 0], [100, 0, 0]])
+  settings = settings_with(distribution: :count, count: 2, orientation: :flat,
+                           extra_angle: 90.0, alternate_flip: true)
+  distances = Distribution.distances(path, settings)
+  spun = Placement.transformations(path, distances, settings, instance_with, spins: { 0 => 90.0 })
+  # 90 extra + 90 manual = 180
+  assert_vector [-1, 0, 0], spun[0].xaxis
+end
+
+# --- поручень ----------------------------------------------------------------
+
+test 'a rectangular profile is four points around the path line' do
+  s = settings_with(rail: true, rail_width: 40.0, rail_height: 20.0, rail_shape: :rect)
+  assert_equal [[-20.0, -10.0], [20.0, -10.0], [20.0, 10.0], [-20.0, 10.0]], Railing.profile(s)
+end
+
+test 'a round profile is a closed ring of the requested size' do
+  s = settings_with(rail: true, rail_width: 40.0, rail_height: 40.0, rail_shape: :round)
+  points = Railing.profile(s)
+  assert_equal Railing::ROUND_SEGMENTS, points.size
+  points.each { |u, v| assert_close 20.0, Math.sqrt(u * u + v * v), 1.0e-9 }
+end
+
+test 'alignment puts the profile on the line or wholly to one side' do
+  base = { rail: true, rail_width: 40.0, rail_height: 20.0 }
+  centred = Railing.profile(settings_with(**base, rail_align: :center))
+  outward = Railing.profile(settings_with(**base, rail_align: :outward))
+  inward = Railing.profile(settings_with(**base, rail_align: :inward))
+
+  assert_equal(-20.0, centred.map(&:first).min)
+  assert_equal 20.0, centred.map(&:first).max
+  assert_equal 0.0, outward.map(&:first).min
+  assert_equal 40.0, outward.map(&:first).max
+  assert_equal(-40.0, inward.map(&:first).min)
+  assert_equal 0.0, inward.map(&:first).max
+end
+
+test 'rise lifts the profile off the path line' do
+  s = settings_with(rail: true, rail_width: 40.0, rail_height: 20.0, rail_rise: 100.0)
+  points = Railing.profile(s)
+  assert_equal 90.0, points.map(&:last).min
+  assert_equal 110.0, points.map(&:last).max
+end
+
+test 'a section sits in the mitre plane at a corner' do
+  path = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0]])
+  s = settings_with(rail: true, rail_width: 20.0, rail_height: 20.0)
+  rings = Railing.sections(path, s)
+  assert_equal 3, rings.size
+
+  corner = Geom::Point3d.new(100, 0, 0)
+  bisector = Geom::Vector3d.new(1, 1, 0).normalize
+  rings[1].each do |p|
+    assert_close 0.0, (p - corner).dot(bisector), 1.0e-9, 'point left the mitre plane'
+  end
+end
+
+test 'the profile keeps its width through a corner' do
+  path = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0]])
+  s = settings_with(rail: true, rail_width: 20.0, rail_height: 20.0)
+  rings = Railing.sections(path, s)
+  # Прямые сечения шириной 20; косое на срезе длиннее ровно в 1/cos(45).
+  assert_close 20.0, rings[0][0].distance(rings[0][1]), 1.0e-6
+  assert_close 20.0 * Math.sqrt(2), rings[1][0].distance(rings[1][1]), 1.0e-6
+end
+
+test 'extending the ends adds sections beyond the path' do
+  path = build_path([[0, 0, 0], [100, 0, 0]])
+  base = { rail: true, rail_width: 10.0, rail_height: 10.0 }
+  plain = Railing.sections(path, settings_with(**base))
+  longer = Railing.sections(path, settings_with(**base, rail_extend: 25.0))
+  assert_equal 2, plain.size
+  assert_equal 4, longer.size
+  assert_close(-25.0, longer.first.map(&:x).min, 1.0e-6)
+  assert_close 125.0, longer.last.map(&:x).max, 1.0e-6
+end
+
+test 'a closed loop gets one section per vertex and no duplicate at the seam' do
+  square = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0], [0, 100, 0], [0, 0, 0]], closed: true)
+  rings = Railing.sections(square, settings_with(rail: true, rail_width: 10.0, rail_height: 10.0))
+  assert_equal 4, rings.size
+end
+
+test 'no railing is produced when it is switched off or has no size' do
+  path = build_path([[0, 0, 0], [100, 0, 0]])
+  assert_equal [], Railing.sections(path, settings_with(rail: false))
+  assert_equal [], Railing.sections(path, settings_with(rail: true, rail_width: 0.0))
+end
+
+test 'the skin closes an open run with two caps' do
+  path = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0]])
+  entities = Sketchup::Entities.new
+  group = Railing.build(entities, path, settings_with(rail: true, rail_width: 20.0, rail_height: 20.0))
+  # Два участка по четыре боковых грани плюс два торца.
+  assert_equal 10, group.entities.faces.size
+end
+
+test 'a closed loop is skinned without caps' do
+  square = build_path([[0, 0, 0], [100, 0, 0], [100, 100, 0], [0, 100, 0], [0, 0, 0]], closed: true)
+  entities = Sketchup::Entities.new
+  group = Railing.build(entities, square, settings_with(rail: true, rail_width: 20.0, rail_height: 20.0))
+  assert_equal 16, group.entities.faces.size
+end

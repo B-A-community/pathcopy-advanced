@@ -2,7 +2,7 @@
 
 module BACommunity
   module PathCopyAdvanced
-    %w[constants path path_builder distribution placement copier settings icons panel menus tool]
+    %w[constants path path_builder distribution placement railing copier settings icons panel menus tool]
       .each { |file| Sketchup.require(File.join(__dir__, file)) }
 
     # Shared options instance, so the toolbar menu and the running tool edit the

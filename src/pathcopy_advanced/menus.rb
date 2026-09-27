@@ -29,7 +29,13 @@ module BACommunity
         radio_group(menu.add_submenu('Замкнутый контур'), FACING_MODES,
                     FACING_LABELS, settings, :facing, &on_change)
 
+        radio_group(menu.add_submenu('Поручень: привязка'), RAIL_ALIGN_MODES,
+                    RAIL_ALIGN_LABELS, settings, :rail_align, &on_change)
+        radio_group(menu.add_submenu('Поручень: сечение'), RAIL_SHAPES,
+                    RAIL_SHAPE_LABELS, settings, :rail_shape, &on_change)
+
         menu.add_separator
+        toggle(menu, 'Поручень вдоль пути', settings, :rail, &on_change)
         toggle(menu, 'Не дублировать копию на стыке', settings, :skip_seam, &on_change)
         toggle(menu, 'Развернуть направление пути', settings, :reverse_path, &on_change)
         toggle(menu, 'Разворачивать каждую вторую', settings, :alternate_flip, &on_change)
@@ -39,6 +45,7 @@ module BACommunity
         menu.add_separator
         menu.add_item('Смещения и поворот…') { offsets_dialog(settings, &on_change) }
         menu.add_item('Разброс…') { jitter_dialog(settings, &on_change) }
+        menu.add_item('Поручень…') { rail_dialog(settings, &on_change) }
         menu.add_item('Тег для копий…') { tag_dialog(settings, &on_change) }
 
         menu.add_separator
@@ -117,6 +124,22 @@ module BACommunity
         settings.jitter_vertical = to_inches(result[4], settings.jitter_vertical)
         settings.seed            = result[5].to_i
         settings.jitter = true
+        settings.sanitize!
+        on_change&.call
+      end
+
+      def rail_dialog(settings, &on_change)
+        prompts = ['Ширина', 'Высота', 'Продлить концы', 'Поднять над путём']
+        defaults = [length(settings.rail_width), length(settings.rail_height),
+                    length(settings.rail_extend), length(settings.rail_rise)]
+        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} — поручень")
+        return unless result
+
+        settings.rail_width  = to_inches(result[0], settings.rail_width)
+        settings.rail_height = to_inches(result[1], settings.rail_height)
+        settings.rail_extend = to_inches(result[2], settings.rail_extend)
+        settings.rail_rise = to_inches(result[3], settings.rail_rise)
+        settings.rail = true
         settings.sanitize!
         on_change&.call
       end

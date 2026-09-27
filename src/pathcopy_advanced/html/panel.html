@@ -24,6 +24,10 @@
   #status { min-height: 30px; }
   #status .stage { color: #1c1c1c; }
   .hidden { display: none !important; }
+  .row.muted-row { opacity: .45; }
+  .row.muted-row select, .row.muted-row input { pointer-events: none; }
+  .sub { color: #888; font-size: 11px; padding: 0 0 2px 126px; line-height: 1.35; }
+  .sub.narrow { padding-left: 104px; }
 </style>
 </head>
 <body>
@@ -86,14 +90,24 @@
       </div>
       <div class="row" id="rowFacing">
         <label class="name" for="facing">Замкнутый контур</label>
-        <select id="facing" data-key="facing"></select>
+        <select id="facing" data-key="facing"
+                title="Куда развёрнуты копии на замкнутом контуре: от центра или к центру"></select>
       </div>
+      <div class="sub" id="facingHint"></div>
       <div class="row">
         <label class="opt"><input type="checkbox" id="reverse_path" data-key="reverse_path"> развернуть направление пути</label>
       </div>
       <div class="row">
         <label class="opt"><input type="checkbox" id="alternate_flip" data-key="alternate_flip"> разворачивать каждую вторую копию</label>
       </div>
+      <div class="row">
+        <label class="name" for="nudge_angle">Доворот кликом</label>
+        <input type="text" id="nudge_angle" data-key="nudge_angle" class="tiny"
+               title="На сколько поворачивается копия, по которой кликнули">
+        <span class="unit">°</span>
+        <button id="btnClearNudges" title="Вернуть довёрнутым копиям общую ориентацию">Сбросить</button>
+      </div>
+      <div class="sub" id="nudgeHint">Клик по уже поставленной копии доворачивает её, Shift+клик — обратно.</div>
       <div class="row">
         <label class="name" for="offset_lateral">Смещение</label>
         <input type="text" id="offset_lateral" data-key="offset_lateral" class="short" title="Вбок от пути (влево по ходу — положительное)">
@@ -122,6 +136,39 @@
           <input type="text" id="seed" data-key="seed" class="short" title="Одно и то же число — один и тот же разброс">
           <span class="unit">вдоль / вбок / вверх — в единицах модели</span>
         </div>
+      </div>
+    </div>
+
+    <div class="group">
+      <h3><label class="opt"><input type="checkbox" id="rail" data-key="rail"> Поручень вдоль пути</label></h3>
+      <div id="railBody">
+        <div class="row">
+          <label class="name" for="rail_shape">Сечение</label>
+          <select id="rail_shape" data-key="rail_shape"></select>
+        </div>
+        <div class="row">
+          <label class="name" for="rail_width">Габарит</label>
+          <input type="text" id="rail_width" data-key="rail_width" class="short" title="Ширина сечения, поперёк пути">
+          <input type="text" id="rail_height" data-key="rail_height" class="short" title="Высота сечения">
+          <span class="unit">ширина / высота</span>
+        </div>
+        <div class="row">
+          <label class="name" for="rail_align">Привязка</label>
+          <select id="rail_align" data-key="rail_align"
+                  title="Где профиль относительно линии пути: сидит на ней или целиком с одной стороны"></select>
+        </div>
+        <div class="sub" id="railAlignHint"></div>
+        <div class="row">
+          <label class="name" for="rail_extend">Продлить концы</label>
+          <input type="text" id="rail_extend" data-key="rail_extend" class="short"
+                 title="На сколько вывести поручень за крайние точки пути">
+        </div>
+        <div class="row">
+          <label class="name" for="rail_rise">Поднять</label>
+          <input type="text" id="rail_rise" data-key="rail_rise" class="short"
+                 title="Подъём профиля над линией пути — поручень поверх стоек">
+        </div>
+        <div class="sub">Без подъёма профиль центрируется прямо на линии пути.</div>
       </div>
     </div>
 
@@ -172,11 +219,14 @@
       fillSelect(byId('align'), s.options.align, s.align);
       fillSelect(byId('anchor'), s.options.anchor, s.anchor);
       fillSelect(byId('facing'), s.options.facing, s.facing);
+      fillSelect(byId('rail_shape'), s.options.rail_shape, s.rail_shape);
+      fillSelect(byId('rail_align'), s.options.rail_align, s.rail_align);
 
       ['spacing', 'count', 'start_offset', 'end_offset', 'extra_angle', 'offset_lateral', 'offset_vertical',
-       'jitter_angle', 'jitter_scale', 'jitter_along', 'jitter_lateral', 'jitter_vertical', 'seed', 'tag_name']
+       'jitter_angle', 'jitter_scale', 'jitter_along', 'jitter_lateral', 'jitter_vertical', 'seed',
+       'rail_width', 'rail_height', 'rail_extend', 'rail_rise', 'nudge_angle', 'tag_name']
         .forEach(function (k) { if (document.activeElement !== byId(k)) byId(k).value = s[k]; });
-      ['skip_seam', 'reverse_path', 'alternate_flip', 'jitter', 'group_result']
+      ['skip_seam', 'reverse_path', 'alternate_flip', 'jitter', 'group_result', 'rail']
         .forEach(function (k) { byId(k).checked = !!s[k]; });
 
       var d = s.distribution;
@@ -186,6 +236,25 @@
       byId('spacingHint').textContent = d === 'fit' ? 'подгоняется под длину' : d === 'segments' ? 'подгоняется в каждом сегменте' : '';
       byId('rowFacing').classList.toggle('hidden', s.orientation === 'none');
       byId('jitterBody').classList.toggle('hidden', !s.jitter);
+      byId('railBody').classList.toggle('hidden', !s.rail);
+
+      // Настройка действует только на замкнутом пути — говорим об этом прямо,
+      // вместо того чтобы молча ничего не делать.
+      var loop = !!s.path_closed;
+      byId('rowFacing').classList.toggle('muted-row', !loop);
+      byId('facingHint').textContent = loop
+        ? 'Копии разворачиваются лицом от центра контура или к нему, как бы ни был нарисован контур.'
+        : (s.has_path ? 'Путь не замкнут — настройка не действует.'
+                      : 'Действует только на замкнутом контуре: окружность, контур грани, замкнутая цепочка.');
+      var nudged = Number(s.nudged || 0);
+      byId('btnClearNudges').disabled = nudged === 0;
+      byId('nudgeHint').textContent = nudged
+        ? 'Довёрнуто вручную: ' + nudged + '. Клик по копии доворачивает её, Shift+клик — обратно.'
+        : 'Клик по уже поставленной копии доворачивает её, Shift+клик — обратно.';
+
+      byId('railAlignHint').textContent = loop
+        ? 'Наружу и внутрь считаются от центра контура.'
+        : 'Наружу — влево по ходу пути, внутрь — вправо.';
 
       document.querySelectorAll('.quick button').forEach(function (b) {
         b.classList.toggle('on', Number(b.dataset.angle) === Number(s.extra_angle));
@@ -210,6 +279,9 @@
     });
     byId('btnReset').addEventListener('click', function () {
       if (window.sketchup && sketchup.reset) sketchup.reset();
+    });
+    byId('btnClearNudges').addEventListener('click', function () {
+      if (window.sketchup && sketchup.clear_nudges) sketchup.clear_nudges();
     });
 
     window.pca = pca;

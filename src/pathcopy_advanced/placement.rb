@@ -21,8 +21,9 @@ module BACommunity
       #   one object, or several to alternate between
       # @param index_offset [Integer] how many copies were already placed on
       #   earlier paths, so alternation and flipping stay continuous
+      # @param spins [Hash] доворот отдельных копий руками: индекс => градусы
       # @return [Array<Geom::Transformation>]
-      def transformations(path, distances, settings, source, index_offset: 0)
+      def transformations(path, distances, settings, source, index_offset: 0, spins: nil)
         sources = Array(source)
         return [] if sources.empty?
 
@@ -56,6 +57,7 @@ module BACommunity
             factor   += symmetric(random, settings.jitter_scale)
           end
 
+          spin += spins[index].to_f if spins && spins[index]
           spin += 180.0 if turn_around
           spin += 180.0 if settings.alternate_flip && index.odd?
           factor = TOLERANCE if factor < TOLERANCE
@@ -131,6 +133,7 @@ module BACommunity
         along.positive?
       end
 
+      # Used by Railing as well as by the facing logic.
       # The path's own plane normal, turned to point upward whenever it has an
       # upward component so copies stay upright on a horizontal or sloping
       # path; a vertical path keeps the normal as drawn. Straight or

@@ -15,11 +15,12 @@ module BACommunity
       HTML_FILE = File.join(__dir__, 'html', 'panel.html').freeze
 
       LENGTH_KEYS  = %i[spacing start_offset end_offset offset_lateral offset_vertical
-                        jitter_along jitter_lateral jitter_vertical].freeze
+                        jitter_along jitter_lateral jitter_vertical
+                        rail_width rail_height rail_extend rail_rise].freeze
       INT_KEYS     = %i[count seed].freeze
-      FLOAT_KEYS   = %i[extra_angle jitter_angle].freeze
+      FLOAT_KEYS   = %i[extra_angle jitter_angle nudge_angle].freeze
       PERCENT_KEYS = %i[jitter_scale].freeze
-      BOOL_KEYS    = %i[skip_seam reverse_path alternate_flip jitter group_result].freeze
+      BOOL_KEYS    = %i[skip_seam reverse_path alternate_flip jitter group_result rail].freeze
       STRING_KEYS  = %i[tag_name].freeze
 
       OPTION_LISTS = {
@@ -27,7 +28,9 @@ module BACommunity
         orientation:  [ORIENTATION_MODES, ORIENTATION_LABELS],
         align:        [ALIGN_MODES, ALIGN_LABELS],
         anchor:       [ANCHOR_MODES, ANCHOR_LABELS],
-        facing:       [FACING_MODES, FACING_LABELS]
+        facing:       [FACING_MODES, FACING_LABELS],
+        rail_align:   [RAIL_ALIGN_MODES, RAIL_ALIGN_LABELS],
+        rail_shape:   [RAIL_SHAPES, RAIL_SHAPE_LABELS]
       }.freeze
 
       @dialog = nil
@@ -89,6 +92,10 @@ module BACommunity
           dialog.add_action_callback('ready') { |_ctx| push }
           dialog.add_action_callback('set') { |_ctx, key, value| assign(key, value) }
           dialog.add_action_callback('reset') { |_ctx| reset }
+          dialog.add_action_callback('clear_nudges') do |_ctx|
+            @tool&.clear_nudges
+            @tool ? @tool.settings_changed : push
+          end
           dialog.set_on_closed { @settings&.show_panel = false; @settings&.save }
           dialog
         end
@@ -110,6 +117,10 @@ module BACommunity
             modes.map { |mode| [mode.to_s, labels[mode]] }
           end
           data[:status] = @tool ? @tool.panel_status : 'Инструмент не запущен — значения запомнятся.'
+          context = @tool ? @tool.panel_context : { has_path: false, closed: false, nudged: 0 }
+          data[:has_path] = context[:has_path]
+          data[:path_closed] = context[:closed]
+          data[:nudged] = context[:nudged].to_i
           data
         end
 

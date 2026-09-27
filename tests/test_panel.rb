@@ -15,6 +15,10 @@ class FakeTool
   def panel_status
     'stub status'
   end
+
+  def panel_context
+    { has_path: true, closed: true }
+  end
 end
 
 def fresh_panel(settings = settings_with)

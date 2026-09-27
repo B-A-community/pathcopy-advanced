@@ -497,6 +497,12 @@ module Sketchup
   class Drawingelement < Entity
     attr_accessor :transformation, :definition, :material, :layer, :name
 
+    def erase!
+      @erased = true
+      @owner&.items&.delete(self)
+      true
+    end
+
     def initialize(definition, transformation = Geom::Transformation.new)
       @definition = definition
       @transformation = transformation
@@ -506,7 +512,11 @@ module Sketchup
 
   class ComponentInstance < Drawingelement; end
 
-  class Group < Drawingelement; end
+  class Group < Drawingelement
+    def entities
+      @entities ||= Entities.new
+    end
+  end
 
   # --- module functions -----------------------------------------------
 
@@ -631,14 +641,43 @@ module Sketchup
   end
 
   class Entities
-    attr_reader :items
+    attr_reader :items, :faces
 
     def initialize
       @items = []
+      @faces = []
       @raise_on_add = false
     end
 
     attr_accessor :raise_on_add
+
+    # Only what Railing needs: refuse degenerate and non-planar outlines the
+    # way SketchUp does, so the fallback to triangles is really exercised.
+    def add_face(*points)
+      points = points.first if points.size == 1 && points.first.is_a?(Array)
+      raise ArgumentError, 'need at least 3 points' if points.size < 3
+
+      unique = []
+      points.each { |p| unique << p unless unique.any? { |q| q.distance(p) < 1.0e-6 } }
+      raise ArgumentError, 'degenerate face' if unique.size < 3
+
+      normal = nil
+      unique.each_with_index do |p, i|
+        a = unique[(i + 1) % unique.size] - p
+        b = unique[(i + 2) % unique.size] - unique[(i + 1) % unique.size]
+        candidate = a.cross(b)
+        next if candidate.length < 1.0e-9
+
+        normal ||= candidate.normalize
+        raise ArgumentError, 'points are not planar' if candidate.normalize.cross(normal).length > 1.0e-6
+      end
+      raise ArgumentError, 'degenerate face' if normal.nil?
+
+      face = Face.new([])
+      face.instance_variable_set(:@points, unique)
+      @faces << face
+      face
+    end
 
     def add_instance(definition, transformation)
       raise ArgumentError, 'deliberate failure' if @raise_on_add
@@ -649,7 +688,7 @@ module Sketchup
       instance
     end
 
-    def add_group(entities)
+    def add_group(entities = nil)
       group = Group.new(ComponentDefinition.new('wrapper'), Geom::Transformation.new)
       group.owner = self
       group.contents = Array(entities)
