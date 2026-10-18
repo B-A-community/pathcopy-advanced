@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>PathCopy Advanced 1.0 — краткая инструкция</title>
+<!-- Оформление — как у инструкций area counter и RALNCS (B-A-community, docs/guide-rus.html) -->
+<style>
+  @page { size: A4; margin: 14mm 16mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 10pt/1.4 "Segoe UI", system-ui, sans-serif; color: #1c1c1c; }
+  header { display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px; }
+  header svg { width: 44px; height: 44px; flex: none; }
+  h1 { font-size: 20pt; font-weight: 700; line-height: 1.1; }
+  .sub { color: #666; font-size: 10pt; margin-top: 2px; }
+  h2 { font-size: 11.5pt; font-weight: 700; margin: 10px 0 4px; display: flex; align-items: center; gap: 8px; }
+  h2 .n { display: inline-block; width: 22px; height: 22px; border-radius: 11px; background: #2b6cb0; color: #fff; font-size: 10pt; text-align: center; line-height: 22px; }
+  p, li { margin-bottom: 3px; }
+  ol, ul { padding-left: 18px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
+  kbd, .btn { font: inherit; font-size: 8.5pt; padding: 0 6px; border: 1px solid #bbb; border-radius: 5px; background: #fff; white-space: nowrap; }
+  .btn.primary { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+  table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 2px 0 4px; }
+  td { padding: 2px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
+  td:first-child { white-space: nowrap; font-weight: 600; }
+  .note { background: #f5f5f4; border: 1px solid #ddd; border-radius: 8px; padding: 6px 12px; margin-top: 8px; font-size: 9pt; }
+  .note b { color: #c53030; }
+  .note .path { font-weight: 600; }
+  code { white-space: nowrap; }
+  footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd; color: #888; font-size: 9pt; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="-1 2 26 20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 18 C 9 19, 13 6, 22 7" fill="none" stroke="#3B3B38" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#2B6CB0" stroke="#1B4F86" stroke-width="1">
+      <rect x="-0.5" y="15.5" width="5" height="5"/>
+      <rect x="5.8" y="12.87" width="5" height="5"/>
+      <rect x="11.87" y="7.13" width="5" height="5"/>
+      <rect x="19.5" y="4.5" width="5" height="5"/>
+    </g>
+  </svg>
+  <div>
+    <h1>PathCopy Advanced 1.0 — краткая инструкция</h1>
+    <div class="sub">Плагин SketchUp 2024 / 2025: копирование групп и компонентов вдоль пути и поручень профилем по тому же пути</div>
+  </div>
+</header>
+
+<h2><span class="n">1</span>Установка</h2>
+<p>SketchUp → <b>Window → Extension Manager → Install Extension</b> → выбрать <code>pathcopy-advanced-1.0.0-rus.rbz</code> → перезапустить SketchUp.
+Появятся две кнопки на панели «PathCopy Advanced» — инструмент и панель настроек — и меню <b>Extensions → PathCopy Advanced</b>.
+Сборка не подписана: в <b>Extension Manager → Settings</b> политика загрузки должна быть «Unrestricted».</p>
+
+<div class="two">
+<div>
+<h2><span class="n">2</span>Скопировать вдоль пути</h2>
+<ol>
+  <li>Запустите инструмент. Вместе с ним откроется <b>панель настроек</b>.</li>
+  <li>Кликните ребро — это путь. Соседние рёбра подхватываются сами, сваривать не нужно; обход останавливается на развилке. Клик по грани берёт её контур. <kbd>Ctrl</kbd>+клик добавляет ещё один путь, можно и выделить рёбра заранее.</li>
+  <li>Кликните группу или компонент — его копируем. <kbd>Ctrl</kbd>+клик по нескольким объектам — копии будут чередоваться.</li>
+  <li>Меняйте что угодно в панели — копии перестраиваются на месте. Вся сессия — <b>один шаг отмены</b>.</li>
+</ol>
+
+<h2><span class="n">3</span>Расстановка</h2>
+<table>
+  <tr><td>Шаг</td><td>фиксированное расстояние; остаток — от начала, по центру или от конца</td></tr>
+  <tr><td>Количество</td><td>ровно N копий на всю длину</td></tr>
+  <tr><td>Подгонка шага</td><td>ближайший к заданному шаг, делящий путь нацело</td></tr>
+  <tr><td>По сегментам</td><td>копия в <b>каждой вершине</b>, шаг подгоняется внутри сегмента — для ограждений</td></tr>
+  <tr><td>По вершинам</td><td>по одной копии на узел пути</td></tr>
+</table>
+<p>В поле измерений SketchUp: <kbd>1200</kbd> — шаг в единицах модели, <kbd>20x</kbd> — двадцать копий, <kbd>0</kbd> — по вершинам. <kbd>Tab</kbd> — следующий режим.</p>
+
+<h2><span class="n">4</span>Ориентация</h2>
+<p><i>По пути, в плане</i> — поворот по азимуту; <i>в 3D</i> — с наклоном по уклону; <i>по плоскости пути</i> — для контура на стене; <i>не поворачивать</i>. Кнопки <span class="btn">Вдоль</span> / <span class="btn">Поперёк</span> ставят объект вдоль линии или перпендикулярно ей. В углу копия стоит по рельсу, а не по биссектрисе.
+<b>Замкнутый контур</b>: копии лицом <i>наружу</i> или <i>внутрь</i>, как бы контур ни был нарисован; на незамкнутом пути строка погашена.</p>
+</div>
+
+<div>
+<h2><span class="n">5</span>Поручень</h2>
+<p>Галочка <b>Поручень вдоль пути</b> протягивает профиль по тому же пути:</p>
+<ul>
+  <li><b>Сечение</b> — прямоугольное или круглое, ширина и высота;</li>
+  <li><b>Привязка</b> — по центру линии, целиком наружу или внутрь;</li>
+  <li><b>Поднять</b> — выводит поручень на высоту стоек;</li>
+  <li><b>Продлить концы</b> — за крайние точки пути.</li>
+</ul>
+<p>Углы режутся митрой — поворот проходит одной деталью без щелей. Поручень строится вместе с копиями и отменяется тем же <kbd>Ctrl+Z</kbd>; можно построить и без копий.</p>
+
+<h2><span class="n">6</span>Доводка</h2>
+<p>Клик по уже поставленной копии <b>доворачивает её</b> на заданный угол (по умолчанию 90°), <kbd>Shift</kbd>+клик — обратно. Доворот сохраняется при смене любых настроек; <span class="btn">Сбросить</span> в панели вернёт общую ориентацию.
+<b>Разброс</b> — случайные поворот, масштаб и сдвиг в заданных пределах; одно и то же <i>зерно</i> даёт тот же результат.</p>
+
+<h2><span class="n">7</span>Клавиши</h2>
+<table>
+  <tr><td><kbd>Tab</kbd></td><td>режим расстановки</td></tr>
+  <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>ориентация</td></tr>
+  <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>остаток шага</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>шаг назад; сначала убирает копии</td></tr>
+  <tr><td>ПКМ</td><td>все настройки, если панель закрыта</td></tr>
+</table>
+
+<p class="note"><b>Важно.</b> Копии наследуют материал, тег и масштаб исходника. Буквенных клавиш у инструмента нет — одиночная буква в SketchUp уходит вашему шорткату. Настройки запоминаются; закрытую панель открывает вторая кнопка. Версия и авторы — <span class="path">Extensions → PathCopy Advanced → О плагине…</span></p>
+</div>
+</div>
+
+<footer>
+  <span>Автор: Maksar Sanjeev · Apache 2.0 · B&amp;A community</span>
+  <span>github.com/B-A-community/pathcopy-advanced</span>
+</footer>
+</body>
+</html>

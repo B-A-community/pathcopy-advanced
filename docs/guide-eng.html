@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PathCopy Advanced 1.0 — quick guide</title>
+<!-- Same layout as the area counter and RALNCS guides (B-A-community, docs/guide-eng.html) -->
+<style>
+  @page { size: A4; margin: 14mm 16mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font: 10pt/1.4 "Segoe UI", system-ui, sans-serif; color: #1c1c1c; }
+  header { display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px; }
+  header svg { width: 44px; height: 44px; flex: none; }
+  h1 { font-size: 20pt; font-weight: 700; line-height: 1.1; }
+  .sub { color: #666; font-size: 10pt; margin-top: 2px; }
+  h2 { font-size: 11.5pt; font-weight: 700; margin: 10px 0 4px; display: flex; align-items: center; gap: 8px; }
+  h2 .n { display: inline-block; width: 22px; height: 22px; border-radius: 11px; background: #2b6cb0; color: #fff; font-size: 10pt; text-align: center; line-height: 22px; }
+  p, li { margin-bottom: 3px; }
+  ol, ul { padding-left: 18px; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 22px; }
+  kbd, .btn { font: inherit; font-size: 8.5pt; padding: 0 6px; border: 1px solid #bbb; border-radius: 5px; background: #fff; white-space: nowrap; }
+  .btn.primary { background: #2b6cb0; border-color: #2b6cb0; color: #fff; }
+  table { border-collapse: collapse; width: 100%; font-size: 9pt; margin: 2px 0 4px; }
+  td { padding: 2px 6px; border-bottom: 1px solid #eee; vertical-align: top; }
+  td:first-child { white-space: nowrap; font-weight: 600; }
+  .note { background: #f5f5f4; border: 1px solid #ddd; border-radius: 8px; padding: 6px 12px; margin-top: 8px; font-size: 9pt; }
+  .note b { color: #c53030; }
+  .note .path { font-weight: 600; }
+  code { white-space: nowrap; }
+  footer { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ddd; color: #888; font-size: 9pt; display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<header>
+  <svg viewBox="-1 2 26 20" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 18 C 9 19, 13 6, 22 7" fill="none" stroke="#3B3B38" stroke-width="1.6" stroke-linecap="round"/>
+    <g fill="#2B6CB0" stroke="#1B4F86" stroke-width="1">
+      <rect x="-0.5" y="15.5" width="5" height="5"/>
+      <rect x="5.8" y="12.87" width="5" height="5"/>
+      <rect x="11.87" y="7.13" width="5" height="5"/>
+      <rect x="19.5" y="4.5" width="5" height="5"/>
+    </g>
+  </svg>
+  <div>
+    <h1>PathCopy Advanced 1.0 — quick guide</h1>
+    <div class="sub">SketchUp 2024 / 2025 extension: copy groups and components along a path and sweep a railing profile along the same path</div>
+  </div>
+</header>
+
+<h2><span class="n">1</span>Installation</h2>
+<p>SketchUp → <b>Window → Extension Manager → Install Extension</b> → choose <code>pathcopy-advanced-1.0.0-eng.rbz</code> → restart SketchUp.
+Two buttons appear on the "PathCopy Advanced" toolbar — the tool and the settings panel — plus the <b>Extensions → PathCopy Advanced</b> menu.
+The build is unsigned: under <b>Extension Manager → Settings</b> the loading policy must be "Unrestricted".</p>
+
+<div class="two">
+<div>
+<h2><span class="n">2</span>Copy along a path</h2>
+<ol>
+  <li>Start the tool. The <b>settings panel</b> opens with it.</li>
+  <li>Click an edge — that is the path. Neighbouring edges are picked up automatically, no welding needed; the walk stops at a junction. Clicking a face takes its outline. <kbd>Ctrl</kbd>+click adds another path; pre-selecting the edges works too.</li>
+  <li>Click the group or component to copy. <kbd>Ctrl</kbd>+click several objects — the copies will alternate.</li>
+  <li>Change anything in the panel — the copies rebuild in place. The whole session is <b>a single undo step</b>.</li>
+</ol>
+
+<h2><span class="n">3</span>Distribution</h2>
+<table>
+  <tr><td>Spacing</td><td>a fixed distance; the leftover goes to the start, the centre or the end</td></tr>
+  <tr><td>Count</td><td>exactly N copies over the whole length</td></tr>
+  <tr><td>Fit spacing</td><td>the nearest spacing to the given one that divides the path evenly</td></tr>
+  <tr><td>Fit per segment</td><td>a copy on <b>every vertex</b>, spacing fitted inside each segment — for railings</td></tr>
+  <tr><td>Vertices</td><td>one copy per vertex of the path</td></tr>
+</table>
+<p>In the SketchUp measurement box: <kbd>1200</kbd> is the spacing in model units, <kbd>20x</kbd> is twenty copies, <kbd>0</kbd> is one per vertex. <kbd>Tab</kbd> is the next mode.</p>
+
+<h2><span class="n">4</span>Orientation</h2>
+<p><i>Follow path, in plan</i> — turn by heading; <i>in 3D</i> — tilt with the slope; <i>path plane</i> — for a loop drawn on a wall; <i>keep orientation</i>. The <span class="btn">Along</span> / <span class="btn">Across</span> buttons set the object along the line or perpendicular to it. At a corner a copy stands square to the rail, not on the bisector.
+<b>Closed path</b>: copies face <i>outward</i> or <i>inward</i>, however the loop was drawn; on an open path the row is greyed out.</p>
+</div>
+
+<div>
+<h2><span class="n">5</span>Railing</h2>
+<p>The <b>Railing along the path</b> checkbox sweeps a profile along the same path:</p>
+<ul>
+  <li><b>Section</b> — rectangular or round, width and height;</li>
+  <li><b>Alignment</b> — centred on the line, wholly outward or inward;</li>
+  <li><b>Raise</b> — lifts the railing to the top of the posts;</li>
+  <li><b>Extend the ends</b> — past the end points of the path.</li>
+</ul>
+<p>Corners are mitred — a turn is a single piece with no gaps. The railing is built together with the copies and undone by the same <kbd>Ctrl+Z</kbd>; it can be built without copies too.</p>
+
+<h2><span class="n">6</span>Finishing by hand</h2>
+<p>Click a placed copy to <b>turn it</b> by the given angle (90° by default), <kbd>Shift</kbd>+click turns it back. The turn survives any change of settings; <span class="btn">Clear</span> in the panel restores the common orientation.
+<b>Randomise</b> — random rotation, scale and shift within the given bounds; the same <i>seed</i> gives the same result.</p>
+
+<h2><span class="n">7</span>Keys</h2>
+<table>
+  <tr><td><kbd>Tab</kbd></td><td>distribution mode</td></tr>
+  <tr><td><kbd>↑</kbd> <kbd>↓</kbd></td><td>orientation</td></tr>
+  <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>where the leftover goes</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>one step back; removes the copies first</td></tr>
+  <tr><td>Right-click</td><td>all options, if the panel is closed</td></tr>
+</table>
+
+<p class="note"><b>Note.</b> Copies inherit the source's material, tag and scale. The tool binds no letter keys — in SketchUp a bare letter goes to your own shortcut. Settings are remembered; the second button reopens a closed panel. Version and authors — <span class="path">Extensions → PathCopy Advanced → About…</span></p>
+</div>
+</div>
+
+<footer>
+  <span>Author: Maksar Sanjeev · Apache 2.0 · B&amp;A community</span>
+  <span>github.com/B-A-community/pathcopy-advanced</span>
+</footer>
+</body>
+</html>

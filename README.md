@@ -90,8 +90,9 @@
 
 ## Установка
 
-Взять пакет своего языка — `pathcopy-advanced-1.0.0-rus.rbz` или
-`-eng.rbz` — и поставить: SketchUp → **Расширения → Менеджер расширений →
+Скачать из [релиза](https://github.com/B-A-community/pathcopy-advanced/releases/latest)
+архив своего языка — `pathcopy-advanced-1.0.0-rus.zip` или `-eng.zip`. Внутри
+плагин `.rbz` и одностраничная PDF-инструкция. Плагин поставить: SketchUp → **Расширения → Менеджер расширений →
 Установить расширение**. Инструмент и кнопка панели появятся в
 **Расширения → PathCopy Advanced**, панель инструментов — в **Вид → Панели
 инструментов → PathCopy Advanced**. После установки SketchUp нужно
@@ -126,8 +127,9 @@ src/
     html/                          panel.html, about.html, i18n.js (ru + en), ba.css, ba.js
     icons/                         *.svg (Windows) + *.png (фолбэк), курсор
     instructor/ru, instructor/en   панель Instructor на двух языках
+docs/                              инструкция: guide-rus.html / guide-eng.html и PDF
 tests/                             офлайн-тесты и живые сценарии
-tools/                             сборка пакетов и генерация иконок
+tools/                             сборка пакетов и инструкций, генерация иконок
 (пакеты собираются локально в dist/, в репозиторий не кладутся)
 ```
 
@@ -142,6 +144,16 @@ powershell -ExecutionPolicy Bypass -File "tools\build_rbz.ps1"
 Собирает оба пакета в `dist/`. Отдельный язык — `-Lang ru` или `-Lang en`.
 Языковой пакет — тот же исходник: в копии подменяется строка `LANG` в
 `lang.rb` (Ruby) и `html/i18n.js` (окна). Версия читается из `constants.rb`.
+
+Релизные архивы — как у area counter: `toolsuild_guides.ps1` печатает
+`docs\guide-*.html` в PDF через headless Chrome или Edge, затем
+`toolsuild_rbz.ps1 -Release` кладёт рядом с пакетами
+`dist\pathcopy-advanced-<версия>-rus.zip` / `-eng.zip` — плагин плюс инструкция.
+
+```bash
+powershell -ExecutionPolicy Bypass -File "toolsuild_guides.ps1"
+powershell -ExecutionPolicy Bypass -File "toolsuild_rbz.ps1" -Release
+```
 
 Иконки перерисовываются отдельно, только если менялись формы:
 

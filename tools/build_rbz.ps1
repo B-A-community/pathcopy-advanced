@@ -1,15 +1,19 @@
 ﻿param(
     # ru — русская сборка, en — английская, all — обе
-    [ValidateSet('ru', 'en', 'all')][string]$Lang = 'all'
+    [ValidateSet('ru', 'en', 'all')][string]$Lang = 'all',
+    # Дополнительно упаковать релизные архивы: .rbz + PDF-инструкция (docs\)
+    [switch]$Release
 )
 
 # Собирает dist\pathcopy-advanced-<версия>-rus.rbz и -eng.rbz из src\ — как в
 # RALNCS и area counter: языковой пакет — тот же исходник, в копии подменяется
 # строка LANG в src\pathcopy_advanced\lang.rb (Ruby) и
 # src\pathcopy_advanced\html\i18n.js (окна).
+# С -Release рядом кладутся dist\pathcopy-advanced-<версия>-rus.zip / -eng.zip:
+# внутри плагин и инструкция docs\pathcopy-advanced-<версия>-guide-rus.pdf / -eng.pdf.
 # Имя архива на идентичность расширения не влияет: SketchUp читает
 # pathcopy_advanced.rb из КОРНЯ архива, а версию — из constants.rb.
-# Запуск:  powershell -ExecutionPolicy Bypass -File tools\build_rbz.ps1 [-Lang en]
+# Запуск:  powershell -ExecutionPolicy Bypass -File tools\build_rbz.ps1 [-Lang en] [-Release]
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression            # ZipArchive / ZipArchiveMode
@@ -18,6 +22,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem # ZipFile / ZipFileExten
 $root = Split-Path -Parent $PSScriptRoot
 $src  = Join-Path $root 'src'
 $dist = Join-Path $root 'dist'
+$docs = Join-Path $root 'docs'
 New-Item -ItemType Directory -Force $dist | Out-Null
 
 # 1. Версия берётся из исходника, чтобы имя пакета не разъезжалось с кодом
@@ -68,6 +73,22 @@ foreach ($l in $langs) {
     Add-Tree $rbz $stage
     Remove-Item $stage -Recurse -Force
     Write-Host "Собрано: $rbz"
+
+    # 4. Релизный архив: плагин + инструкция
+    if ($Release) {
+        $guide = Join-Path $docs ('pathcopy-advanced-{0}-guide-{1}.pdf' -f $version, $suffix[$l])
+        if (-not (Test-Path $guide)) { throw "Нет инструкции $guide — сначала tools\build_guides.ps1" }
+        $pack = Join-Path $env:TEMP ('pathcopy_advanced_pack_' + $l)
+        Remove-Item $pack -Recurse -Force -ErrorAction SilentlyContinue
+        New-Item -ItemType Directory -Force $pack | Out-Null
+        Copy-Item $rbz $pack
+        Copy-Item $guide $pack
+        $zip = Join-Path $dist "$base.zip"
+        Remove-Item $zip -ErrorAction SilentlyContinue
+        Add-Tree $zip $pack
+        Remove-Item $pack -Recurse -Force
+        Write-Host "Собрано: $zip"
+    }
 }
 
 Get-ChildItem $dist -File | ForEach-Object { Write-Host ("  {0,-44} {1,9} б" -f $_.Name, $_.Length) }

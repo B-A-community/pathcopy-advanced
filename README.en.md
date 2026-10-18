@@ -93,8 +93,10 @@ Settings are remembered between sessions.
 
 ## Installation
 
-Take the package for your language — `pathcopy-advanced-1.0.0-eng.rbz` or
-`-rus.rbz` — and install it: SketchUp → **Extensions → Extension Manager →
+Download the archive for your language from the
+[release](https://github.com/B-A-community/pathcopy-advanced/releases/latest) —
+`pathcopy-advanced-1.0.0-eng.zip` or `-rus.zip`. Inside are the `.rbz` plugin
+and a one-page PDF guide. Install the plugin: SketchUp → **Extensions → Extension Manager →
 Install Extension**. The tool and the panel button appear under
 **Extensions → PathCopy Advanced**, the toolbar under **View → Toolbars →
 PathCopy Advanced**. Restart SketchUp afterwards — Ruby files are cached.
@@ -128,8 +130,9 @@ src/
     html/                          panel.html, about.html, i18n.js (ru + en), ba.css, ba.js
     icons/                         *.svg (Windows) + *.png (fallback), cursor
     instructor/ru, instructor/en   the Instructor panel in both languages
+docs/                              guide: guide-rus.html / guide-eng.html and the PDFs
 tests/                             offline tests and live scenarios
-tools/                             package build and icon generation
+tools/                             package and guide build, icon generation
 (packages are built locally into dist/ and are not committed)
 ```
 
@@ -145,6 +148,16 @@ Builds both packages into `dist/`. For one language use `-Lang ru` or
 `-Lang en`. A language package is the same source: in a copy the `LANG` line
 is swapped in `lang.rb` (Ruby) and `html/i18n.js` (the windows). The version
 is read from `constants.rb`.
+
+Release archives follow area counter: `toolsuild_guides.ps1` prints
+`docs\guide-*.html` to PDF with headless Chrome or Edge, then
+`toolsuild_rbz.ps1 -Release` puts `dist\pathcopy-advanced-<version>-rus.zip` /
+`-eng.zip` next to the packages — the plugin plus the guide.
+
+```bash
+powershell -ExecutionPolicy Bypass -File "toolsuild_guides.ps1"
+powershell -ExecutionPolicy Bypass -File "toolsuild_rbz.ps1" -Release
+```
 
 Icons are regenerated separately, only when the shapes change:
 
