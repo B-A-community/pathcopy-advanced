@@ -29,7 +29,7 @@ module BACommunity
         end
 
         smooth_round_edges(group.entities, settings)
-        group.name = 'PathCopy — поручень'
+        group.name = PathCopyAdvanced.t(:name_rail)
         group
       end
 

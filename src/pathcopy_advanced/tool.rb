@@ -47,11 +47,11 @@ module BACommunity
 
       def panel_status
         case @state
-        when :path   then 'Кликните ребро или грань — это путь.'
-        when :source then "Путь выбран. Кликните группу или компонент. Мест: #{preview_count}."
+        when :path   then PathCopyAdvanced.t(:ps_pick_path)
+        when :source then PathCopyAdvanced.t(:ps_pick_source, preview_count)
         else
-          spun = @manual_spin.empty? ? '' : " Довёрнуто вручную: #{@manual_spin.size}."
-          "Готово: объектов #{@created.size}.#{spun} Клик по копии доворачивает её "             "на #{@settings.nudge_angle.round}°, Shift+клик — обратно."
+          spun = @manual_spin.empty? ? '' : PathCopyAdvanced.t(:ps_nudged, @manual_spin.size)
+          PathCopyAdvanced.t(:ps_placed, @created.size, spun, @settings.nudge_angle.round)
         end
       end
 
@@ -233,8 +233,9 @@ module BACommunity
         true
       end
 
+      # Своя папка на язык: SketchUp открывает index.html из неё как есть.
       def getInstructorContentDirectory
-        File.join(__dir__, 'instructor')
+        File.join(__dir__, 'instructor', LANG)
       end
 
       private
@@ -443,7 +444,7 @@ module BACommunity
       rescue StandardError => error
         @created = []
         @state = :source
-        UI.messagebox("PathCopy Advanced не смог расставить копии:\n\n#{error.message}")
+        UI.messagebox(PathCopyAdvanced.t(:err_place, error.message))
       end
 
       def all_transformations(sources)
@@ -513,30 +514,31 @@ module BACommunity
 
       # Ctrl on Windows, Option on macOS - whatever COPY_MODIFIER_MASK maps to.
       MODIFIER = Sketchup.platform == :platform_osx ? 'Option' : 'Ctrl'
-      HINTS = 'Tab — режим, ↑↓ — ориентация, ←→ — остаток, всё остальное — в панели'
+      def hints
+        PathCopyAdvanced.t(:hints)
+      end
 
       def prompt
         case @state
         when :path
-          "Кликните ребро или грань — это путь (#{MODIFIER}+клик добавляет ещё один, " \
-            "или выделите рёбра заранее). [#{@settings.summary}]"
+          PathCopyAdvanced.t(:st_pick_path, MODIFIER, @settings.summary)
         when :source
-          queued = @sources.empty? ? '' : "В очереди объектов: #{@sources.size}. "
-          paths = @paths.size > 1 ? "Путей: #{@paths.size}. " : ''
-          "Кликните группу или компонент — его копируем; #{MODIFIER}+клик добавляет объекты и пути. " \
-            "#{paths}#{queued}Мест: #{preview_count}. #{HINTS}"
+          queued = @sources.empty? ? '' : PathCopyAdvanced.t(:st_queued_n, @sources.size)
+          paths = @paths.size > 1 ? PathCopyAdvanced.t(:st_paths_n, @paths.size) : ''
+          PathCopyAdvanced.t(:st_pick_source, MODIFIER) + paths + queued +
+            PathCopyAdvanced.t(:st_places_n, preview_count) + hints
         else
-          "Готово: #{@created.size}. Клик по копии — доворот на #{@settings.nudge_angle.round}°, "             "Shift+клик — обратно; Esc убирает всё. #{HINTS}"
+          PathCopyAdvanced.t(:st_placed, @created.size, @settings.nudge_angle.round, hints)
         end
       end
 
       def vcb_label
         case @settings.distribution
-        when :count    then 'Копий'
-        when :vertices then 'Вершин'
-        when :fit      then 'Шаг, подгонка'
-        when :segments then 'Шаг в сегменте'
-        else                'Шаг'
+        when :count    then PathCopyAdvanced.t(:vcb_copies)
+        when :vertices then PathCopyAdvanced.t(:vcb_vertices)
+        when :fit      then PathCopyAdvanced.t(:vcb_fit)
+        when :segments then PathCopyAdvanced.t(:vcb_segments)
+        else                PathCopyAdvanced.t(:vcb_spacing)
         end
       end
 

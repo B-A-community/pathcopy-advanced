@@ -1,16 +1,24 @@
-﻿# Собирает src\ в build\PathCopyAdvanced-<версия>.rbz — например
-# build\PathCopyAdvanced-0.1.0.rbz. Имя архива на идентичность расширения не
-# влияет: SketchUp читает pathcopy_advanced.rb из КОРНЯ архива, а версию —
-# из src\pathcopy_advanced\constants.rb, откуда её берёт и этот скрипт.
-# Запуск:  powershell -ExecutionPolicy Bypass -File tools\build_rbz.ps1
+﻿param(
+    # ru — русская сборка, en — английская, all — обе
+    [ValidateSet('ru', 'en', 'all')][string]$Lang = 'all'
+)
+
+# Собирает dist\pathcopy-advanced-<версия>-rus.rbz и -eng.rbz из src\ — как в
+# RALNCS и area counter: языковой пакет — тот же исходник, в копии подменяется
+# строка LANG в src\pathcopy_advanced\lang.rb (Ruby) и
+# src\pathcopy_advanced\html\i18n.js (окна).
+# Имя архива на идентичность расширения не влияет: SketchUp читает
+# pathcopy_advanced.rb из КОРНЯ архива, а версию — из constants.rb.
+# Запуск:  powershell -ExecutionPolicy Bypass -File tools\build_rbz.ps1 [-Lang en]
 
 $ErrorActionPreference = 'Stop'
+Add-Type -AssemblyName System.IO.Compression            # ZipArchive / ZipArchiveMode
+Add-Type -AssemblyName System.IO.Compression.FileSystem # ZipFile / ZipFileExtensions
 
 $root = Split-Path -Parent $PSScriptRoot
 $src  = Join-Path $root 'src'
-$out  = Join-Path $root 'build'
-
-if (-not (Test-Path $src)) { throw "Нет папки с исходниками: $src" }
+$dist = Join-Path $root 'dist'
+New-Item -ItemType Directory -Force $dist | Out-Null
 
 # 1. Версия берётся из исходника, чтобы имя пакета не разъезжалось с кодом
 $constants = Join-Path $src 'pathcopy_advanced\constants.rb'
@@ -18,31 +26,48 @@ $match = Select-String -Path $constants -Pattern "VERSION\s*=\s*'([^']+)'" | Sel
 if (-not $match) { throw "Не нашёл VERSION в $constants" }
 $version = $match.Matches[0].Groups[1].Value
 
-$name = "PathCopyAdvanced-$version.rbz"
-$rbz  = Join-Path $out $name
-New-Item -ItemType Directory -Force $out | Out-Null
-if (Test-Path $rbz) { Remove-Item $rbz -Force }
+$suffix = @{ ru = 'rus'; en = 'eng' }
+$langs  = if ($Lang -eq 'all') { @('ru', 'en') } else { @($Lang) }
+$utf8   = New-Object System.Text.UTF8Encoding $false
 
-# 2. Упаковка.
-# Записи добавляем поштучно: CreateFromDirectory и Compress-Archive в .NET
-# Framework / PS 5.1 пишут пути через обратный слэш, а ZIP требует прямой —
-# SketchUp такой архив разложит в один файл "pathcopy_advanced\tool.rb"
-# вместо папки.
-Add-Type -AssemblyName System.IO.Compression
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$archive = [System.IO.Compression.ZipFile]::Open($rbz, [System.IO.Compression.ZipArchiveMode]::Create)
-try {
-    $prefix = (Resolve-Path $src).Path.TrimEnd('\') + '\'
-    Get-ChildItem $src -Recurse -File | Sort-Object FullName | ForEach-Object {
-        $entryName = $_.FullName.Substring($prefix.Length).Replace('\', '/')
-        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
-            $archive, $_.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+# Записи добавляем поштучно: CreateFromDirectory в .NET Framework пишет пути
+# через обратный слэш, а ZIP требует прямой — SketchUp такой архив разложит
+# в один файл с именем "pathcopy_advanced\tool.rb" вместо папки.
+function Add-Tree($zipPath, $dir) {
+    $archive = [System.IO.Compression.ZipFile]::Open($zipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        $prefix = (Resolve-Path $dir).Path.TrimEnd('\') + '\'
+        Get-ChildItem $dir -Recurse -File | Sort-Object FullName | ForEach-Object {
+            $name = $_.FullName.Substring($prefix.Length).Replace('\', '/')
+            [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+                $archive, $_.FullName, $name, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+        }
+    } finally {
+        $archive.Dispose()
     }
-} finally {
-    $archive.Dispose()
 }
 
-Write-Host "Собрано: $rbz"
-$check = [System.IO.Compression.ZipFile]::OpenRead($rbz)
-$check.Entries | ForEach-Object { Write-Host ("  {0,-45} {1,7} б" -f $_.FullName, $_.Length) }
-$check.Dispose()
+foreach ($l in $langs) {
+    $base  = 'pathcopy-advanced-{0}-{1}' -f $version, $suffix[$l]
+    $stage = Join-Path $env:TEMP ('pathcopy_advanced_build_' + $l)
+    Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
+    Copy-Item $src $stage -Recurse
+
+    # 2. Язык: одна строка LANG в двух словарях
+    foreach ($f in @('pathcopy_advanced\lang.rb', 'pathcopy_advanced\html\i18n.js')) {
+        $p = Join-Path $stage $f
+        $text = [System.IO.File]::ReadAllText($p, $utf8)
+        $patched = $text -replace "LANG = '[a-z]{2}'", "LANG = '$l'"
+        if ($patched -notmatch "LANG = '$l'") { throw "Не нашёл строку LANG в $f" }
+        [System.IO.File]::WriteAllText($p, $patched, $utf8)
+    }
+
+    # 3. Пакет
+    $rbz = Join-Path $dist "$base.rbz"
+    Remove-Item $rbz -ErrorAction SilentlyContinue
+    Add-Tree $rbz $stage
+    Remove-Item $stage -Recurse -Force
+    Write-Host "Собрано: $rbz"
+}
+
+Get-ChildItem $dist -File | ForEach-Object { Write-Host ("  {0,-44} {1,9} б" -f $_.Name, $_.Length) }

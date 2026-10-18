@@ -23,15 +23,7 @@ module BACommunity
       BOOL_KEYS    = %i[skip_seam reverse_path alternate_flip jitter group_result rail].freeze
       STRING_KEYS  = %i[tag_name].freeze
 
-      OPTION_LISTS = {
-        distribution: [DISTRIBUTION_MODES, DISTRIBUTION_LABELS],
-        orientation:  [ORIENTATION_MODES, ORIENTATION_LABELS],
-        align:        [ALIGN_MODES, ALIGN_LABELS],
-        anchor:       [ANCHOR_MODES, ANCHOR_LABELS],
-        facing:       [FACING_MODES, FACING_LABELS],
-        rail_align:   [RAIL_ALIGN_MODES, RAIL_ALIGN_LABELS],
-        rail_shape:   [RAIL_SHAPES, RAIL_SHAPE_LABELS]
-      }.freeze
+      OPTION_GROUPS = %i[distribution orientation align anchor facing rail_align rail_shape].freeze
 
       @dialog = nil
       @tool = nil
@@ -113,10 +105,11 @@ module BACommunity
               else value
               end
           end
-          data[:options] = OPTION_LISTS.transform_values do |modes, labels|
-            modes.map { |mode| [mode.to_s, labels[mode]] }
+          data[:options] = OPTION_GROUPS.each_with_object({}) do |group, hash|
+            labels = PathCopyAdvanced.labels(group)
+            hash[group] = MODE_LISTS[group].map { |mode| [mode.to_s, labels[mode]] }
           end
-          data[:status] = @tool ? @tool.panel_status : 'Инструмент не запущен — значения запомнятся.'
+          data[:status] = @tool ? @tool.panel_status : PathCopyAdvanced.t(:ps_idle)
           context = @tool ? @tool.panel_context : { has_path: false, closed: false, nudged: 0 }
           data[:has_path] = context[:has_path]
           data[:path_closed] = context[:closed]

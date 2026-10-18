@@ -15,9 +15,11 @@ module BACommunity
   end
 end
 
-# PLUGIN_NAME and VERSION live with the rest of the constants, so nothing below
-# this directory depends on the loader having run first.
+# PLUGIN_NAME и VERSION лежат вместе с остальными константами, подписи — в
+# lang.rb, поэтому ничего ниже этой папки не зависит от того, отработал ли
+# загрузчик. Язык пакета подменяет toolsuild_rbz.ps1 -Lang.
 require File.join(BACommunity::PathCopyAdvanced::PLUGIN_PATH, 'constants')
+require File.join(BACommunity::PathCopyAdvanced::PLUGIN_PATH, 'lang')
 
 module BACommunity
   module PathCopyAdvanced

@@ -11,45 +11,34 @@ module BACommunity
       module_function
 
       def build(menu, settings, &on_change)
-        menu.add_item('Панель настроек') do
+        menu.add_item(PathCopyAdvanced.t(:menu_panel)) do
           settings.show_panel = true
           settings.save
           Panel.show(settings)
         end
         menu.add_separator
 
-        radio_group(menu.add_submenu('Расстановка'), DISTRIBUTION_MODES,
-                    DISTRIBUTION_LABELS, settings, :distribution, &on_change)
-        radio_group(menu.add_submenu('Ориентация'), ORIENTATION_MODES,
-                    ORIENTATION_LABELS, settings, :orientation, &on_change)
-        radio_group(menu.add_submenu('Остаток шага'), ALIGN_MODES,
-                    ALIGN_LABELS, settings, :align, &on_change)
-        radio_group(menu.add_submenu('Точка привязки'), ANCHOR_MODES,
-                    ANCHOR_LABELS, settings, :anchor, &on_change)
-        radio_group(menu.add_submenu('Замкнутый контур'), FACING_MODES,
-                    FACING_LABELS, settings, :facing, &on_change)
-
-        radio_group(menu.add_submenu('Поручень: привязка'), RAIL_ALIGN_MODES,
-                    RAIL_ALIGN_LABELS, settings, :rail_align, &on_change)
-        radio_group(menu.add_submenu('Поручень: сечение'), RAIL_SHAPES,
-                    RAIL_SHAPE_LABELS, settings, :rail_shape, &on_change)
+        %i[distribution orientation align anchor facing rail_align rail_shape].each do |group|
+          radio_group(menu.add_submenu(PathCopyAdvanced.t(:"menu_#{group}")),
+                      MODE_LISTS[group], PathCopyAdvanced.labels(group), settings, group, &on_change)
+        end
 
         menu.add_separator
-        toggle(menu, 'Поручень вдоль пути', settings, :rail, &on_change)
-        toggle(menu, 'Не дублировать копию на стыке', settings, :skip_seam, &on_change)
-        toggle(menu, 'Развернуть направление пути', settings, :reverse_path, &on_change)
-        toggle(menu, 'Разворачивать каждую вторую', settings, :alternate_flip, &on_change)
-        toggle(menu, 'Разброс', settings, :jitter, &on_change)
-        toggle(menu, 'Сгруппировать копии', settings, :group_result, &on_change)
+        toggle(menu, PathCopyAdvanced.t(:mi_rail), settings, :rail, &on_change)
+        toggle(menu, PathCopyAdvanced.t(:mi_skip_seam), settings, :skip_seam, &on_change)
+        toggle(menu, PathCopyAdvanced.t(:mi_reverse), settings, :reverse_path, &on_change)
+        toggle(menu, PathCopyAdvanced.t(:mi_flip), settings, :alternate_flip, &on_change)
+        toggle(menu, PathCopyAdvanced.t(:mi_jitter), settings, :jitter, &on_change)
+        toggle(menu, PathCopyAdvanced.t(:mi_group), settings, :group_result, &on_change)
 
         menu.add_separator
-        menu.add_item('Смещения и поворот…') { offsets_dialog(settings, &on_change) }
-        menu.add_item('Разброс…') { jitter_dialog(settings, &on_change) }
-        menu.add_item('Поручень…') { rail_dialog(settings, &on_change) }
-        menu.add_item('Тег для копий…') { tag_dialog(settings, &on_change) }
+        menu.add_item(PathCopyAdvanced.t(:mi_offsets)) { offsets_dialog(settings, &on_change) }
+        menu.add_item(PathCopyAdvanced.t(:mi_jitter_dlg)) { jitter_dialog(settings, &on_change) }
+        menu.add_item(PathCopyAdvanced.t(:mi_rail_dlg)) { rail_dialog(settings, &on_change) }
+        menu.add_item(PathCopyAdvanced.t(:mi_tag)) { tag_dialog(settings, &on_change) }
 
         menu.add_separator
-        menu.add_item('Сбросить настройки') do
+        menu.add_item(PathCopyAdvanced.t(:menu_reset)) do
           Settings::DEFAULTS.each { |key, value| settings.send("#{key}=", value) unless key == :show_panel }
           settings.sanitize!
           on_change&.call
@@ -84,14 +73,14 @@ module BACommunity
       # --- dialogs -------------------------------------------------------
 
       def offsets_dialog(settings, &on_change)
-        prompts = ['Отступ от начала', 'Отступ от конца', 'Смещение вбок', 'Смещение вверх',
-                   'Доворот, °']
+        prompts = %i[p_start_offset p_end_offset p_offset_side p_offset_up p_extra_angle]
+                  .map { |key| PathCopyAdvanced.t(key) }
         defaults = [
           length(settings.start_offset), length(settings.end_offset),
           length(settings.offset_lateral), length(settings.offset_vertical),
           settings.extra_angle.to_s
         ]
-        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} — смещения")
+        result = UI.inputbox(prompts, defaults, PathCopyAdvanced.t(:dlg_offsets))
         return unless result
 
         settings.start_offset    = to_inches(result[0], settings.start_offset)
@@ -104,8 +93,8 @@ module BACommunity
       end
 
       def jitter_dialog(settings, &on_change)
-        prompts = ['Поворот ±, °', 'Масштаб ±, %', 'Сдвиг вдоль ±',
-                   'Сдвиг вбок ±', 'Сдвиг вверх ±', 'Зерно']
+        prompts = %i[p_j_angle p_j_scale p_j_along p_j_side p_j_up p_seed]
+                  .map { |key| PathCopyAdvanced.t(key) }
         defaults = [
           settings.jitter_angle.to_s,
           (settings.jitter_scale * 100.0).round(1).to_s,
@@ -114,7 +103,7 @@ module BACommunity
           length(settings.jitter_vertical),
           settings.seed.to_s
         ]
-        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} — разброс")
+        result = UI.inputbox(prompts, defaults, PathCopyAdvanced.t(:dlg_jitter))
         return unless result
 
         settings.jitter_angle    = result[0].to_f
@@ -129,10 +118,11 @@ module BACommunity
       end
 
       def rail_dialog(settings, &on_change)
-        prompts = ['Ширина', 'Высота', 'Продлить концы', 'Поднять над путём']
+        prompts = %i[p_rail_width p_rail_height p_rail_extend p_rail_rise]
+                  .map { |key| PathCopyAdvanced.t(key) }
         defaults = [length(settings.rail_width), length(settings.rail_height),
                     length(settings.rail_extend), length(settings.rail_rise)]
-        result = UI.inputbox(prompts, defaults, "#{PLUGIN_NAME} — поручень")
+        result = UI.inputbox(prompts, defaults, PathCopyAdvanced.t(:dlg_rail))
         return unless result
 
         settings.rail_width  = to_inches(result[0], settings.rail_width)
@@ -146,9 +136,9 @@ module BACommunity
 
       def tag_dialog(settings, &on_change)
         result = UI.inputbox(
-          ['Тег для копий (пусто — как у исходника)'],
+          [PathCopyAdvanced.t(:p_tag)],
           [settings.tag_name],
-          "#{PLUGIN_NAME} — результат"
+          PathCopyAdvanced.t(:dlg_tag)
         )
         return unless result
 

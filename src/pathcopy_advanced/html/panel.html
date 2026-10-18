@@ -5,6 +5,7 @@
 <title>PathCopy Advanced</title>
 <!-- Дизайн-код плагинов B&A: ba.css / ba.js лежат рядом, правила — design/designcode.md в ralncs -->
 <link rel="stylesheet" href="ba.css">
+<script src="i18n.js"></script>
 <style>
   /* Компактная утилитарная панель: группы полей друг под другом */
   #wrap { padding: 4px 14px 14px; }
@@ -34,158 +35,151 @@
   <header>
     <span class="code">PathCopy Advanced</span>
     <span class="spacer"></span>
-    <button id="btnReset" title="Вернуть все настройки к исходным">Сброс</button>
+    <button id="btnReset" data-t="btn_reset" data-t-title="t_reset"></button>
   </header>
   <div id="status"><span class="stage">…</span></div>
 
   <div id="wrap">
     <div class="group">
-      <h3>Расстановка</h3>
+      <h3 data-t="g_distribution"></h3>
       <div class="row">
-        <label class="name" for="distribution">Режим</label>
+        <label class="name" for="distribution" data-t="f_mode"></label>
         <select id="distribution" data-key="distribution"></select>
       </div>
       <div class="row" id="rowSpacing">
-        <label class="name" for="spacing">Шаг</label>
+        <label class="name" for="spacing" data-t="f_spacing"></label>
         <input type="text" id="spacing" data-key="spacing" class="short">
         <span class="unit" id="spacingHint"></span>
       </div>
       <div class="row" id="rowCount">
-        <label class="name" for="count">Копий</label>
+        <label class="name" for="count" data-t="f_count"></label>
         <input type="text" id="count" data-key="count" class="short">
       </div>
       <div class="row" id="rowAlign">
-        <label class="name" for="align">Остаток</label>
+        <label class="name" for="align" data-t="f_align"></label>
         <select id="align" data-key="align"></select>
       </div>
       <div class="row">
-        <label class="name" for="start_offset">Отступы</label>
-        <input type="text" id="start_offset" data-key="start_offset" class="short" title="От начала пути">
-        <input type="text" id="end_offset" data-key="end_offset" class="short" title="От конца пути">
-        <span class="unit">начало / конец</span>
+        <label class="name" for="start_offset" data-t="f_offsets"></label>
+        <input type="text" id="start_offset" data-key="start_offset" class="short" data-t-title="t_start_offset">
+        <input type="text" id="end_offset" data-key="end_offset" class="short" data-t-title="t_end_offset">
+        <span class="unit" data-t="u_startend"></span>
       </div>
       <div class="row">
-        <label class="opt"><input type="checkbox" id="skip_seam" data-key="skip_seam"> на замкнутом контуре не дублировать копию на стыке</label>
+        <label class="opt"><input type="checkbox" id="skip_seam" data-key="skip_seam"> <span data-t="c_skip_seam"></span></label>
       </div>
     </div>
 
     <div class="group">
-      <h3>Ориентация</h3>
+      <h3 data-t="g_orientation"></h3>
       <div class="row">
-        <label class="name" for="orientation">Поворот</label>
+        <label class="name" for="orientation" data-t="f_rotation"></label>
         <select id="orientation" data-key="orientation"></select>
       </div>
       <div class="row">
-        <label class="name narrow">Относительно пути</label>
+        <label class="name narrow" data-t="f_relative"></label>
         <span class="quick">
-          <button data-angle="0" title="Ось X объекта вдоль пути">Вдоль</button>
-          <button data-angle="90" title="Ось X объекта поперёк пути">Поперёк</button>
+          <button data-angle="0" data-t="b_along" data-t-title="t_along"></button>
+          <button data-angle="90" data-t="b_across" data-t-title="t_across"></button>
         </span>
-        <input type="text" id="extra_angle" data-key="extra_angle" class="tiny" title="Доворот вокруг вертикальной оси объекта">
+        <input type="text" id="extra_angle" data-key="extra_angle" class="tiny" data-t-title="t_extra_angle">
         <span class="unit">°</span>
       </div>
       <div class="row">
-        <label class="name" for="anchor">Точка привязки</label>
+        <label class="name" for="anchor" data-t="f_anchor"></label>
         <select id="anchor" data-key="anchor"></select>
       </div>
       <div class="row" id="rowFacing">
-        <label class="name" for="facing">Замкнутый контур</label>
-        <select id="facing" data-key="facing"
-                title="Куда развёрнуты копии на замкнутом контуре: от центра или к центру"></select>
+        <label class="name" for="facing" data-t="f_facing"></label>
+        <select id="facing" data-key="facing" data-t-title="t_facing"></select>
       </div>
       <div class="sub" id="facingHint"></div>
       <div class="row">
-        <label class="opt"><input type="checkbox" id="reverse_path" data-key="reverse_path"> развернуть направление пути</label>
+        <label class="opt"><input type="checkbox" id="reverse_path" data-key="reverse_path"> <span data-t="c_reverse"></span></label>
       </div>
       <div class="row">
-        <label class="opt"><input type="checkbox" id="alternate_flip" data-key="alternate_flip"> разворачивать каждую вторую копию</label>
+        <label class="opt"><input type="checkbox" id="alternate_flip" data-key="alternate_flip"> <span data-t="c_flip"></span></label>
       </div>
       <div class="row">
-        <label class="name" for="nudge_angle">Доворот кликом</label>
-        <input type="text" id="nudge_angle" data-key="nudge_angle" class="tiny"
-               title="На сколько поворачивается копия, по которой кликнули">
+        <label class="name" for="nudge_angle" data-t="f_nudge"></label>
+        <input type="text" id="nudge_angle" data-key="nudge_angle" class="tiny" data-t-title="t_nudge">
         <span class="unit">°</span>
-        <button id="btnClearNudges" title="Вернуть довёрнутым копиям общую ориентацию">Сбросить</button>
+        <button id="btnClearNudges" data-t="b_clear" data-t-title="t_clear"></button>
       </div>
-      <div class="sub" id="nudgeHint">Клик по уже поставленной копии доворачивает её, Shift+клик — обратно.</div>
+      <div class="sub" id="nudgeHint"></div>
       <div class="row">
-        <label class="name" for="offset_lateral">Смещение</label>
-        <input type="text" id="offset_lateral" data-key="offset_lateral" class="short" title="Вбок от пути (влево по ходу — положительное)">
-        <input type="text" id="offset_vertical" data-key="offset_vertical" class="short" title="По нормали пути">
-        <span class="unit">вбок / вверх</span>
+        <label class="name" for="offset_lateral" data-t="f_offset"></label>
+        <input type="text" id="offset_lateral" data-key="offset_lateral" class="short" data-t-title="t_offset_side">
+        <input type="text" id="offset_vertical" data-key="offset_vertical" class="short" data-t-title="t_offset_up">
+        <span class="unit" data-t="u_sideup"></span>
       </div>
     </div>
 
     <div class="group">
-      <h3><label class="opt"><input type="checkbox" id="jitter" data-key="jitter"> Разброс</label></h3>
+      <h3><label class="opt"><input type="checkbox" id="jitter" data-key="jitter"> <span data-t="g_jitter"></span></label></h3>
       <div id="jitterBody">
         <div class="row">
-          <label class="name" for="jitter_angle">Поворот ±</label>
+          <label class="name" for="jitter_angle" data-t="f_j_angle"></label>
           <input type="text" id="jitter_angle" data-key="jitter_angle" class="short"><span class="unit">°</span>
-          <label class="name" for="jitter_scale" style="flex-basis:auto">Масштаб ±</label>
+          <label class="name" for="jitter_scale" style="flex-basis:auto" data-t="f_j_scale"></label>
           <input type="text" id="jitter_scale" data-key="jitter_scale" class="short"><span class="unit">%</span>
         </div>
         <div class="row">
-          <label class="name" for="jitter_along">Сдвиг ±</label>
-          <input type="text" id="jitter_along" data-key="jitter_along" class="short" title="Вдоль пути">
-          <input type="text" id="jitter_lateral" data-key="jitter_lateral" class="short" title="Вбок">
-          <input type="text" id="jitter_vertical" data-key="jitter_vertical" class="short" title="Вверх">
+          <label class="name" for="jitter_along" data-t="f_j_shift"></label>
+          <input type="text" id="jitter_along" data-key="jitter_along" class="short" data-t-title="t_j_along">
+          <input type="text" id="jitter_lateral" data-key="jitter_lateral" class="short" data-t-title="t_j_side">
+          <input type="text" id="jitter_vertical" data-key="jitter_vertical" class="short" data-t-title="t_j_up">
         </div>
         <div class="row">
-          <label class="name" for="seed">Зерно</label>
-          <input type="text" id="seed" data-key="seed" class="short" title="Одно и то же число — один и тот же разброс">
-          <span class="unit">вдоль / вбок / вверх — в единицах модели</span>
+          <label class="name" for="seed" data-t="f_seed"></label>
+          <input type="text" id="seed" data-key="seed" class="short" data-t-title="t_seed">
+          <span class="unit" data-t="u_jitter"></span>
         </div>
       </div>
     </div>
 
     <div class="group">
-      <h3><label class="opt"><input type="checkbox" id="rail" data-key="rail"> Поручень вдоль пути</label></h3>
+      <h3><label class="opt"><input type="checkbox" id="rail" data-key="rail"> <span data-t="g_rail"></span></label></h3>
       <div id="railBody">
         <div class="row">
-          <label class="name" for="rail_shape">Сечение</label>
+          <label class="name" for="rail_shape" data-t="f_rail_shape"></label>
           <select id="rail_shape" data-key="rail_shape"></select>
         </div>
         <div class="row">
-          <label class="name" for="rail_width">Габарит</label>
-          <input type="text" id="rail_width" data-key="rail_width" class="short" title="Ширина сечения, поперёк пути">
-          <input type="text" id="rail_height" data-key="rail_height" class="short" title="Высота сечения">
-          <span class="unit">ширина / высота</span>
+          <label class="name" for="rail_width" data-t="f_rail_size"></label>
+          <input type="text" id="rail_width" data-key="rail_width" class="short" data-t-title="t_rail_width">
+          <input type="text" id="rail_height" data-key="rail_height" class="short" data-t-title="t_rail_height">
+          <span class="unit" data-t="u_wh"></span>
         </div>
         <div class="row">
-          <label class="name" for="rail_align">Привязка</label>
-          <select id="rail_align" data-key="rail_align"
-                  title="Где профиль относительно линии пути: сидит на ней или целиком с одной стороны"></select>
+          <label class="name" for="rail_align" data-t="f_rail_align"></label>
+          <select id="rail_align" data-key="rail_align" data-t-title="t_rail_align"></select>
         </div>
         <div class="sub" id="railAlignHint"></div>
         <div class="row">
-          <label class="name" for="rail_extend">Продлить концы</label>
-          <input type="text" id="rail_extend" data-key="rail_extend" class="short"
-                 title="На сколько вывести поручень за крайние точки пути">
+          <label class="name" for="rail_extend" data-t="f_rail_extend"></label>
+          <input type="text" id="rail_extend" data-key="rail_extend" class="short" data-t-title="t_rail_extend">
         </div>
         <div class="row">
-          <label class="name" for="rail_rise">Поднять</label>
-          <input type="text" id="rail_rise" data-key="rail_rise" class="short"
-                 title="Подъём профиля над линией пути — поручень поверх стоек">
+          <label class="name" for="rail_rise" data-t="f_rail_rise"></label>
+          <input type="text" id="rail_rise" data-key="rail_rise" class="short" data-t-title="t_rail_rise">
         </div>
-        <div class="sub">Без подъёма профиль центрируется прямо на линии пути.</div>
+        <div class="sub" data-t="hint_rail_rise"></div>
       </div>
     </div>
 
     <div class="group">
-      <h3>Результат</h3>
+      <h3 data-t="g_result"></h3>
       <div class="row">
-        <label class="name" for="tag_name">Тег копий</label>
-        <input type="text" id="tag_name" data-key="tag_name" placeholder="как у исходника">
+        <label class="name" for="tag_name" data-t="f_tag"></label>
+        <input type="text" id="tag_name" data-key="tag_name" data-t-ph="ph_tag">
       </div>
       <div class="row">
-        <label class="opt"><input type="checkbox" id="group_result" data-key="group_result"> сгруппировать копии</label>
+        <label class="opt"><input type="checkbox" id="group_result" data-key="group_result"> <span data-t="c_group"></span></label>
       </div>
     </div>
 
-    <div class="hint">Всё применяется сразу, копии перестраиваются на месте; вся сессия — один шаг отмены (Ctrl+Z).
-      В поле измерений SketchUp: число — шаг, <b>20x</b> — двадцать копий, <b>0</b> — по вершинам.
-      Tab — следующий режим, ↑↓ — ориентация, ←→ — остаток.</div>
+    <div class="hint" data-t="foot"></div>
   </div>
   <div id="toast"></div>
 
@@ -233,7 +227,7 @@
       byId('rowSpacing').classList.toggle('hidden', d === 'count' || d === 'vertices');
       byId('rowCount').classList.toggle('hidden', d !== 'count');
       byId('rowAlign').classList.toggle('hidden', d !== 'spacing');
-      byId('spacingHint').textContent = d === 'fit' ? 'подгоняется под длину' : d === 'segments' ? 'подгоняется в каждом сегменте' : '';
+      byId('spacingHint').textContent = d === 'fit' ? T.hint_fit : d === 'segments' ? T.hint_segments : '';
       byId('rowFacing').classList.toggle('hidden', s.orientation === 'none');
       byId('jitterBody').classList.toggle('hidden', !s.jitter);
       byId('railBody').classList.toggle('hidden', !s.rail);
@@ -242,19 +236,13 @@
       // вместо того чтобы молча ничего не делать.
       var loop = !!s.path_closed;
       byId('rowFacing').classList.toggle('muted-row', !loop);
-      byId('facingHint').textContent = loop
-        ? 'Копии разворачиваются лицом от центра контура или к нему, как бы ни был нарисован контур.'
-        : (s.has_path ? 'Путь не замкнут — настройка не действует.'
-                      : 'Действует только на замкнутом контуре: окружность, контур грани, замкнутая цепочка.');
+      byId('facingHint').textContent = loop ? T.hint_facing_loop
+        : (s.has_path ? T.hint_facing_open : T.hint_facing_none);
       var nudged = Number(s.nudged || 0);
       byId('btnClearNudges').disabled = nudged === 0;
-      byId('nudgeHint').textContent = nudged
-        ? 'Довёрнуто вручную: ' + nudged + '. Клик по копии доворачивает её, Shift+клик — обратно.'
-        : 'Клик по уже поставленной копии доворачивает её, Shift+клик — обратно.';
+      byId('nudgeHint').textContent = nudged ? tf('hint_nudge_n', { n: nudged }) : T.hint_nudge;
 
-      byId('railAlignHint').textContent = loop
-        ? 'Наружу и внутрь считаются от центра контура.'
-        : 'Наружу — влево по ходу пути, внутрь — вправо.';
+      byId('railAlignHint').textContent = loop ? T.hint_rail_align_loop : T.hint_rail_align_open;
 
       document.querySelectorAll('.quick button').forEach(function (b) {
         b.classList.toggle('on', Number(b.dataset.angle) === Number(s.extra_angle));
@@ -284,6 +272,7 @@
       if (window.sketchup && sketchup.clear_nudges) sketchup.clear_nudges();
     });
 
+    applyI18n();
     window.pca = pca;
     if (window.sketchup && sketchup.ready) sketchup.ready();
   })();

@@ -6,7 +6,7 @@ require 'json'
 require_relative 'sketchup_stub'
 
 SRC = File.expand_path('../src/pathcopy_advanced', __dir__)
-%w[constants path path_builder distribution placement railing copier settings icons panel menus tool]
+%w[lang constants path path_builder distribution placement railing copier settings icons panel menus tool]
   .each do |file|
   require File.join(SRC, file)
 end

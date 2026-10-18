@@ -25,26 +25,26 @@
     fired = 0
     ns::Menus.build(menu, settings) { fired += 1 }
 
-    check('menu has the option submenus',
-          %w[Расстановка Ориентация Остаток\ шага Точка\ привязки Замкнутый\ контур].all? { |k| menu.subs.key?(k) },
+    want = %i[menu_distribution menu_orientation menu_align menu_anchor menu_facing].map { |k| ns.t(k) }
+    check('menu has the option submenus', want.all? { |k| menu.subs.key?(k) },
           menu.subs.keys.inspect)
-    check('the panel item is the first entry', menu.items.first.first == 'Панель настроек', menu.items.first.first)
-    dist = menu.subs['Расстановка']
+    check('the panel item is the first entry', menu.items.first.first == ns.t(:menu_panel), menu.items.first.first)
+    dist = menu.subs[ns.t(:menu_distribution)]
     check('distribution submenu lists every mode', dist.items.size == ns::DISTRIBUTION_MODES.size, dist.items.size)
     labels = dist.items.map(&:first)
-    count_id = dist.items.find { |l, _, _| l == 'Количество' }.last
-    spacing_id = dist.items.find { |l, _, _| l == 'Шаг' }.last
+    count_id = dist.items.find { |l, _, _| l == ns.t(:dist_count) }.last
+    spacing_id = dist.items.find { |l, _, _| l == ns.t(:dist_spacing) }.last
     check('validation proc marks the current mode with MF_CHECKED',
           dist.procs[count_id].call == MF_CHECKED && dist.procs[spacing_id].call == MF_UNCHECKED)
-    dist.items.find { |l, _, _| l == 'Подгонка шага' }[1].call
+    dist.items.find { |l, _, _| l == ns.t(:dist_fit) }[1].call
     check('choosing a mode from the menu updates settings and fires the callback',
           settings.distribution == :fit && fired == 1, "#{settings.distribution} fired=#{fired}")
-    toggle = menu.items.find { |l, _, _| l == 'Разброс' }
+    toggle = menu.items.find { |l, _, _| l == ns.t(:mi_jitter) }
     toggle[1].call
     check('a toggle flips its setting', settings.jitter == true)
     check('toggle validation reflects the new state',
           menu.procs[toggle.last].call == MF_CHECKED)
-    reset = menu.items.find { |l, _, _| l == 'Сбросить настройки' }
+    reset = menu.items.find { |l, _, _| l == ns.t(:menu_reset) }
     reset[1].call
     check('reset restores defaults', settings.distribution == :spacing && settings.jitter == false)
 

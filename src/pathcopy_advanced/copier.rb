@@ -99,8 +99,8 @@ module BACommunity
 
       def wrap(entities, created, source)
         group = entities.add_group(created)
-        label = source.respond_to?(:definition) ? source.definition.name : 'objects'
-        group.name = "PathCopy - #{label}"
+        label = source.respond_to?(:definition) ? source.definition.name : PathCopyAdvanced.t(:name_objects)
+        group.name = PathCopyAdvanced.t(:name_group, label)
         group
       end
     end

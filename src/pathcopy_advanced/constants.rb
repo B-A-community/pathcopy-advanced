@@ -3,7 +3,7 @@
 module BACommunity
   module PathCopyAdvanced
     PLUGIN_NAME = 'PathCopy Advanced'
-    VERSION     = '0.5.0'
+    VERSION     = '1.0.0'
 
     # Geometric tolerance, in inches (SketchUp's internal unit).
     # SketchUp itself collapses geometry below 0.001", so we stay an order below.
@@ -30,50 +30,30 @@ module BACommunity
     RAIL_SHAPES        = %i[rect round].freeze
     RAIL_ALIGN_MODES   = %i[center outward inward].freeze
 
-    # Подписи на русском: интерфейс плагинов B&A русский (design/designcode.md).
-    DISTRIBUTION_LABELS = {
-      spacing:  'Шаг',
-      count:    'Количество',
-      fit:      'Подгонка шага',
-      segments: 'Подгонка по сегментам',
-      vertices: 'По вершинам'
+    # Один список режимов на группу: по нему Lang.labels строит подписи, а
+    # меню и панель берут готовый хэш - режим добавляется в одном месте и
+    # перевод нигде не забывается.
+    MODE_LISTS = {
+      distribution: DISTRIBUTION_MODES,
+      orientation:  ORIENTATION_MODES,
+      align:        ALIGN_MODES,
+      anchor:       ANCHOR_MODES,
+      facing:       FACING_MODES,
+      rail_align:   RAIL_ALIGN_MODES,
+      rail_shape:   RAIL_SHAPES
     }.freeze
 
-    ORIENTATION_LABELS = {
-      flat:      'По пути, в плане',
-      tangent3d: 'По пути, в 3D',
-      planar:    'По плоскости пути',
-      none:      'Не поворачивать'
+    LABEL_PREFIX = {
+      distribution: 'dist', orientation: 'orient', align: 'align', anchor: 'anchor',
+      facing: 'facing', rail_align: 'railalign', rail_shape: 'railshape'
     }.freeze
 
-    ANCHOR_LABELS = {
-      origin: 'Начало координат объекта',
-      center: 'Центр габаритов',
-      bottom: 'Низ габаритов'
-    }.freeze
 
-    FACING_LABELS = {
-      auto:    'Как нарисовано',
-      outward: 'Наружу',
-      inward:  'Внутрь'
-    }.freeze
 
-    RAIL_SHAPE_LABELS = {
-      rect:  'Прямоугольное',
-      round: 'Круглое'
-    }.freeze
 
-    RAIL_ALIGN_LABELS = {
-      center:  'По центру',
-      outward: 'Наружу',
-      inward:  'Внутрь'
-    }.freeze
 
-    ALIGN_LABELS = {
-      start:  'От начала',
-      center: 'По центру',
-      end:    'От конца'
-    }.freeze
+
+
 
     # Preview colors.
     COLOR_PATH    = Sketchup::Color.new(0, 140, 255)

@@ -141,18 +141,18 @@ module BACommunity
 
       # One-line summary for the status bar.
       def summary
-        parts = [DISTRIBUTION_LABELS[@distribution]]
+        parts = [PathCopyAdvanced.t(:"dist_#{@distribution}")]
         parts << case @distribution
                  when :count    then @count.to_s
-                 when :vertices then '—'
+                 when :vertices then PathCopyAdvanced.t(:dash)
                  else                Sketchup.format_length(@spacing)
                  end
-        parts << ORIENTATION_LABELS[@orientation]
-        parts << ALIGN_LABELS[@align] if @distribution == :spacing
-        parts << FACING_LABELS[@facing] unless @facing == :auto
-        parts << 'путь развёрнут' if @reverse_path
-        parts << 'разброс' if @jitter
-        parts << 'поручень' if @rail
+        parts << PathCopyAdvanced.t(:"orient_#{@orientation}")
+        parts << PathCopyAdvanced.t(:"align_#{@align}") if @distribution == :spacing
+        parts << PathCopyAdvanced.t(:"facing_#{@facing}") unless @facing == :auto
+        parts << PathCopyAdvanced.t(:sum_reversed) if @reverse_path
+        parts << PathCopyAdvanced.t(:sum_jitter) if @jitter
+        parts << PathCopyAdvanced.t(:sum_rail) if @rail
         parts.join(' | ')
       end
 

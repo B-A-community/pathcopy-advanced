@@ -121,8 +121,10 @@ module PCAFacing
     settings.facing = :outward
     tool.settings_changed
     check('facing from the panel is applied', settings.facing == :outward, settings.facing.inspect)
+    ns = BACommunity::PathCopyAdvanced
     check('the status summary names the new state',
-          settings.summary.include?('Наружу') && settings.summary.include?('развёрнут'), settings.summary)
+          settings.summary.include?(ns.t(:facing_outward)) && settings.summary.include?(ns.t(:sum_reversed)),
+          settings.summary)
 
     tool.onCancel(0, view)
     tool.onCancel(0, view)
